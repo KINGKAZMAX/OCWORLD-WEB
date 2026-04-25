@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+dist/
+dist-electron/
+node_modules/
+tmp-env-test-*/
+release/
+hermes-agent/
