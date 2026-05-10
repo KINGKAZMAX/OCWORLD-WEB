@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLang } from '@/hooks/useLang';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import ViewHeader from '@/components/ViewHeader';
 import Composer from '@/components/Composer';
 import OCMark from '@/components/OCMark';
@@ -22,6 +23,7 @@ const GATE_ITEMS = [
 
 export default function HomeView({ onSendTask, onPickQuickStart, avatarDataUrl }: HomeViewProps) {
   const { t, lang } = useLang();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [text, setText] = useState('');
 
@@ -31,7 +33,8 @@ export default function HomeView({ onSendTask, onPickQuickStart, avatarDataUrl }
 
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
-        padding: '32px 56px 60px', maxWidth: 960, width: '100%', margin: '0 auto',
+        padding: isMobile ? '20px 16px 32px' : '32px 56px 60px',
+        maxWidth: 960, width: '100%', margin: '0 auto',
       }}>
         {/* Create OC CTA — prominent banner */}
         {!avatarDataUrl && (
@@ -73,7 +76,7 @@ export default function HomeView({ onSendTask, onPickQuickStart, avatarDataUrl }
         )}
 
         {/* OC stage with greeting card */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 28, alignItems: 'center', marginBottom: 32 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.4fr', gap: isMobile ? 16 : 28, alignItems: 'center', marginBottom: isMobile ? 20 : 32 }}>
           <div className="glass-soft" style={{
             position: 'relative', height: 220, borderRadius: 18,
             display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
@@ -139,8 +142,8 @@ export default function HomeView({ onSendTask, onPickQuickStart, avatarDataUrl }
 
         {/* Quick gates */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 10, marginTop: 24,
+          display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+          gap: 10, marginTop: isMobile ? 16 : 24,
         }}>
           {GATE_ITEMS.map((g, i) => (
             <GateCard key={i} label={t(g.key + '.label')} body={t(g.body)} onClick={() => onPickQuickStart(g.label)} />

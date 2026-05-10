@@ -1,5 +1,6 @@
 import { useState, useRef, type DragEvent, type ChangeEvent } from 'react';
 import { useLang } from '@/hooks/useLang';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import ViewHeader from '@/components/ViewHeader';
 import OCMark from '@/components/OCMark';
 import { api, type ImageGenResponse } from '@/lib/api';
@@ -24,6 +25,7 @@ interface CreateOcViewProps {
 
 export default function CreateOcView({ onCreated }: CreateOcViewProps) {
   const { t, lang } = useLang();
+  const isMobile = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [description, setDescription] = useState(lang === 'en' ? DEFAULT_DESCRIPTION_EN : DEFAULT_DESCRIPTION_ZH);
@@ -138,7 +140,8 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
 
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
-        padding: '32px 56px 60px', maxWidth: 960, width: '100%', margin: '0 auto',
+        padding: isMobile ? '20px 16px 32px' : '32px 56px 60px',
+        maxWidth: 960, width: '100%', margin: '0 auto',
       }}>
         {/* Style selector */}
         <div style={{ marginBottom: 24 }}>
@@ -164,7 +167,7 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
         </div>
 
         {/* Main grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 16 : 24, marginBottom: 24 }}>
           {/* Left column */}
           <div>
             {/* Photo upload */}

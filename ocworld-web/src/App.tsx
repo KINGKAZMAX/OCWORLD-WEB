@@ -2,9 +2,11 @@ import { useState, useCallback, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { LangProvider, useLang } from '@/hooks/useLang';
 import { useIntimacy } from '@/hooks/useIntimacy';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import GlassShell from '@/components/GlassShell';
 import Sidebar from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
+import MobileTabBar from '@/components/MobileTabBar';
 import SplashScreen from '@/components/SplashScreen';
 import HomeView from '@/pages/HomeView';
 import ChatView from '@/pages/ChatView';
@@ -37,6 +39,7 @@ function AppContent() {
   const location = useLocation();
   const { lang } = useLang();
   const intim = useIntimacy();
+  const isMobile = useIsMobile();
 
   const [splashState, setSplashState] = useState(() => {
     return localStorage.getItem('ocworld.seenSplash') === '1' ? 'off' : 'on';
@@ -158,18 +161,21 @@ function AppContent() {
         <SplashScreen onEnter={dismissSplash} onCreateOc={() => { dismissSplash(); navigate('/create-oc'); }} fadingOut={splashState === 'fading'} />
       )}
 
-      <Sidebar
-        active={active}
-        setActive={setActiveView}
-        collapsed={collapsed}
-        setCollapsed={setCollapsed}
-        onNewSession={newSession}
-        onOpenPalette={() => {}}
-      />
+      {!isMobile && (
+        <Sidebar
+          active={active}
+          setActive={setActiveView}
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+          onNewSession={newSession}
+          onOpenPalette={() => {}}
+        />
+      )}
 
       <main style={{
         flex: 1, display: 'flex', flexDirection: 'column',
         overflow: 'hidden', position: 'relative',
+        paddingBottom: isMobile ? 56 : 0,
       }}>
         <Routes>
           <Route path="/" element={
@@ -197,7 +203,11 @@ function AppContent() {
         </Routes>
       </main>
 
-      <TopBar theme={theme} setTheme={setTheme} />
+      {isMobile ? (
+        <MobileTabBar active={active} setActive={setActiveView} />
+      ) : (
+        <TopBar theme={theme} setTheme={setTheme} />
+      )}
     </GlassShell>
   );
 }

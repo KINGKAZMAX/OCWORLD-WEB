@@ -1,10 +1,26 @@
 import type { ReactNode } from 'react';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface GlassShellProps {
   children: ReactNode;
 }
 
 export default function GlassShell({ children }: GlassShellProps) {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <div style={{
+        width: '100%', height: '100%',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden', position: 'relative',
+        background: 'var(--bg-base)',
+      }}>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div style={{
       width: '100%', height: '100%',
@@ -21,7 +37,6 @@ export default function GlassShell({ children }: GlassShellProps) {
         display: 'flex', flexDirection: 'column',
         position: 'relative',
       }}>
-        {/* Title bar — industrial chrome */}
         <div style={{
           height: 38, flexShrink: 0,
           display: 'flex', alignItems: 'center', padding: '0 16px',
