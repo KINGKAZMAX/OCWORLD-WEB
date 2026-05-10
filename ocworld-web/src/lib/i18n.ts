@@ -97,6 +97,7 @@ export const I18N: Record<string, Record<Lang, string>> = {
   'createOc.generate':    { zh: '生成 OC', en: 'Generate OC' },
   'createOc.generating':  { zh: '生成中…', en: 'Generating…' },
   'createOc.useDefault':  { zh: '使用默认描述', en: 'Use default' },
+  'createOc.save':        { zh: '保存到本地', en: 'Save to device' },
   'createOc.confirm':     { zh: '确认使用这个角色', en: 'Confirm this character' },
   'createOc.confirmed':   { zh: '✓ 已保存为当前 OC', en: '✓ Saved as current OC' },
   'createOc.error':       { zh: '生成失败，请重试', en: 'Generation failed, please retry' },

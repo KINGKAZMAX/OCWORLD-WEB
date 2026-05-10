@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, type DragEvent, type ChangeEvent } from 'react';
 import { useLang } from '@/hooks/useLang';
 import ViewHeader from '@/components/ViewHeader';
 import OCMark from '@/components/OCMark';
-import { api } from '@/lib/api';
+import { api, type ImageGenResponse } from '@/lib/api';
 
 const OC_STYLE_OPTIONS = [
   { id: 'pixel',   zh: '像素风',   en: 'Pixel Art' },
@@ -16,29 +16,90 @@ const OC_STYLE_OPTIONS = [
 const DEFAULT_DESCRIPTION_ZH = '一个带红帽子的冒险少年，酷酷表情，战术护目镜，扎小马尾子，背景白色，像素风格，红色风衣，背包，随身异世界宠物，根据我的形象不断生成不同风格和服装，但色系一致，不要马丁鞋，穿平底 Nike 板鞋，长筒宽松的裤子';
 const DEFAULT_DESCRIPTION_EN = 'A red-capped adventure boy, cool expression, tactical goggles, ponytail, white background, pixel style, red coat, backpack, companion pet from another world, generate different styles and outfits based on my image but keep the color scheme consistent, no Martin boots, wear flat Nike sneakers, loose long pants';
 
+const MAX_PHOTO_DIMENSION = 1600;
+
 interface CreateOcViewProps {
   onCreated?: (dataUrl: string, description: string) => void;
 }
 
 export default function CreateOcView({ onCreated }: CreateOcViewProps) {
   const { t, lang } = useLang();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [description, setDescription] = useState(lang === 'en' ? DEFAULT_DESCRIPTION_EN : DEFAULT_DESCRIPTION_ZH);
   const [selectedStyle, setSelectedStyle] = useState('pixel');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [selectedIdx, setSelectedIdx] = useState(0);
   const [error, setError] = useState('');
   const [confirmed, setConfirmed] = useState(false);
+
+  const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [analyzeError, setAnalyzeError] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const selectedPreview = previews[selectedIdx] || null;
+
+  const processFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    const dataUrl = await readAndResize(file, MAX_PHOTO_DIMENSION);
+    setUploadedPhoto(dataUrl);
+    setAnalyzeError('');
+    setKeywords([]);
+    setIsAnalyzing(true);
+    try {
+      const res = await api.analyzePhoto({ imageDataUrl: dataUrl });
+      setKeywords(res.keywords);
+      if (res.description) setDescription(res.description);
+    } catch (err: any) {
+      setAnalyzeError(err.message || t('createOc.analyzeError'));
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  };
+
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+    e.target.value = '';
+  };
+
+  const clearPhoto = () => {
+    setUploadedPhoto(null);
+    setKeywords([]);
+    setAnalyzeError('');
+    setIsAnalyzing(false);
+  };
 
   const handleGenerate = async () => {
     if (!description.trim() || isGenerating) return;
     setIsGenerating(true);
     setError('');
     setConfirmed(false);
+    setPreviews([]);
     try {
       const styleLabel = OC_STYLE_OPTIONS.find(s => s.id === selectedStyle);
-      const prompt = buildPrompt(description, styleLabel?.[lang] || styleLabel?.zh || '');
-      const res = await api.generateImage({ prompt, aspectRatio: '16:9' });
-      setPreview(res.dataUrl);
+      const prompt = buildPrompt(description, styleLabel?.[lang] || styleLabel?.zh || '', keywords);
+      const payload = { prompt, aspectRatio: '9:16' };
+      const results = await Promise.allSettled([
+        api.generateImage(payload),
+        api.generateImage(payload),
+      ]);
+      const urls = results
+        .filter((r): r is PromiseFulfilledResult<ImageGenResponse> => r.status === 'fulfilled')
+        .map(r => r.value.dataUrl);
+      if (urls.length === 0) throw new Error(t('createOc.error'));
+      setPreviews(urls);
+      setSelectedIdx(0);
     } catch (err: any) {
       setError(err.message || t('createOc.error'));
     } finally {
@@ -47,11 +108,21 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
   };
 
   const handleConfirm = () => {
-    if (!preview) return;
+    if (!selectedPreview) return;
     setConfirmed(true);
-    localStorage.setItem('ocworld.avatar', preview);
+    localStorage.setItem('ocworld.avatar', selectedPreview);
     localStorage.setItem('ocworld.avatarDesc', description);
-    onCreated?.(preview, description);
+    onCreated?.(selectedPreview, description);
+  };
+
+  const handleSave = () => {
+    if (!selectedPreview) return;
+    const link = document.createElement('a');
+    link.href = selectedPreview;
+    link.download = `oc-${selectedStyle}-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleUseDefault = () => {
@@ -68,9 +139,7 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
       }}>
         {/* Style selector */}
         <div style={{ marginBottom: 24 }}>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--ink-subtle)', letterSpacing: '0.22em', marginBottom: 12, textTransform: 'uppercase' }}>
-            {t('createOc.style')}
-          </div>
+          <SectionLabel text={t('createOc.style')} />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {OC_STYLE_OPTIONS.map((s) => (
               <button
@@ -91,19 +160,101 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
           </div>
         </div>
 
-        {/* Description + Preview grid */}
+        {/* Main grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
-          {/* Left: Input */}
+          {/* Left column */}
           <div>
-            <div className="mono" style={{ fontSize: 10, color: 'var(--ink-subtle)', letterSpacing: '0.22em', marginBottom: 12, textTransform: 'uppercase' }}>
-              {t('createOc.prompt')}
-            </div>
+            {/* Photo upload */}
+            <SectionLabel text={t('createOc.photoRef')} />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+            />
+            {uploadedPhoto ? (
+              <div style={{
+                display: 'flex', gap: 12, padding: 12,
+                border: '1px solid var(--line)', borderRadius: 14,
+                background: '#0A0A0A', marginBottom: 16,
+              }}>
+                <img
+                  src={uploadedPhoto}
+                  alt="Reference"
+                  style={{
+                    width: 80, height: 80, objectFit: 'cover',
+                    borderRadius: 10, flexShrink: 0,
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {isAnalyzing && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <LoadingDots />
+                      <span className="mono" style={{ fontSize: 11, color: 'var(--accent)', letterSpacing: '0.1em' }}>
+                        {t('createOc.analyzing')}
+                      </span>
+                    </div>
+                  )}
+                  {analyzeError && (
+                    <div style={{ fontSize: 12, color: 'var(--accent-deep)' }}>{analyzeError}</div>
+                  )}
+                  {keywords.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {keywords.map((kw, i) => (
+                        <span key={i} style={{
+                          padding: '3px 10px', borderRadius: 99, fontSize: 11,
+                          background: 'rgba(255,77,109,0.1)', color: 'var(--accent)',
+                          border: '1px solid rgba(255,77,109,0.2)',
+                        }}>
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={clearPhoto}
+                  style={{
+                    alignSelf: 'flex-start', background: 'none', border: 'none',
+                    color: 'var(--ink-faint)', cursor: 'pointer', fontSize: 11,
+                    padding: '2px 6px', flexShrink: 0,
+                  }}
+                >
+                  {t('createOc.clearPhoto')}
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={handleDrop}
+                style={{
+                  border: `1.5px dashed ${isDragOver ? 'var(--accent)' : 'var(--line)'}`,
+                  borderRadius: 14, background: isDragOver ? 'rgba(255,77,109,0.04)' : '#0A0A0A',
+                  padding: '24px 16px', textAlign: 'center', cursor: 'pointer',
+                  transition: 'all .15s', marginBottom: 16,
+                }}
+              >
+                <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.4 }}>+</div>
+                <div style={{ fontSize: 13, color: 'var(--ink-muted)', marginBottom: 4 }}>
+                  {t('createOc.uploadHint')}
+                </div>
+                <div className="mono" style={{ fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '0.12em' }}>
+                  {t('createOc.uploadSub')}
+                </div>
+              </div>
+            )}
+
+            {/* Description */}
+            <SectionLabel text={t('createOc.prompt')} />
             <textarea
               value={description}
               onChange={(e) => { setDescription(e.target.value); setConfirmed(false); }}
               placeholder={t('createOc.placeholder')}
               style={{
-                width: '100%', minHeight: 180, resize: 'vertical',
+                width: '100%', minHeight: 140, resize: 'vertical',
                 border: '1px solid var(--line)', outline: 'none', borderRadius: 14,
                 background: '#0A0A0A', color: 'var(--ink)',
                 padding: '14px 16px', fontSize: 13, lineHeight: 1.65,
@@ -112,6 +263,8 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
               onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--line)'; }}
             />
+
+            {/* Actions */}
             <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center' }}>
               <button
                 onClick={handleGenerate}
@@ -138,7 +291,7 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
                 {t('createOc.useDefault')}
               </button>
               <span className="mono" style={{ fontSize: 9, color: 'var(--ink-faint)', letterSpacing: '0.14em' }}>
-                AI IMAGE · 16:9
+                AI IMAGE · 9:16 · x2
               </span>
             </div>
             {error && (
@@ -146,80 +299,120 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
             )}
           </div>
 
-          {/* Right: Preview */}
+          {/* Right column: Dual preview */}
           <div>
-            <div className="mono" style={{ fontSize: 10, color: 'var(--ink-subtle)', letterSpacing: '0.22em', marginBottom: 12, textTransform: 'uppercase' }}>
-              {t('createOc.preview')}
-            </div>
-            <div style={{
-              position: 'relative', borderRadius: 16, border: '1px solid var(--line)',
-              background: '#0A0A0A', aspectRatio: '16 / 9',
-              display: 'grid', placeItems: 'center', overflow: 'hidden',
-              boxShadow: '0 0 0 1px rgba(255,45,85,.15) inset',
-            }}>
-              {preview ? (
-                <img
-                  src={preview}
-                  alt="Generated OC"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-              ) : (
-                <div style={{ textAlign: 'center' }}>
-                  <OCMark scale={1.2} />
-                  <div className="mono" style={{ marginTop: 12, fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '0.16em' }}>
-                    {isGenerating ? t('createOc.generating') : t('createOc.previewEmpty')}
-                  </div>
+            <SectionLabel text={t('createOc.preview')} />
+
+            {previews.length > 0 ? (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {previews.map((src, i) => (
+                    <div
+                      key={i}
+                      onClick={() => { setSelectedIdx(i); setConfirmed(false); }}
+                      style={{
+                        position: 'relative', borderRadius: 14, overflow: 'hidden',
+                        border: `2px solid ${selectedIdx === i ? 'var(--accent)' : 'var(--line)'}`,
+                        background: '#0A0A0A', aspectRatio: '3 / 4',
+                        cursor: 'pointer', transition: 'border-color .15s',
+                        boxShadow: selectedIdx === i ? '0 0 12px rgba(255,45,85,.2)' : 'none',
+                      }}
+                    >
+                      <img
+                        src={src}
+                        alt={`OC ${i + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                      />
+                      {selectedIdx === i && (
+                        <div style={{
+                          position: 'absolute', top: 8, left: 8,
+                          width: 22, height: 22, borderRadius: '50%',
+                          background: 'var(--accent)', color: '#FFF',
+                          display: 'grid', placeItems: 'center',
+                          fontSize: 12, fontWeight: 700,
+                        }}>
+                          ✓
+                        </div>
+                      )}
+                      {selectedIdx === i && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleSave(); }}
+                          title={t('createOc.save')}
+                          style={{
+                            position: 'absolute', bottom: 8, right: 8,
+                            width: 32, height: 32, borderRadius: '50%',
+                            background: 'rgba(0,0,0,0.7)', border: '1px solid var(--line)',
+                            color: 'var(--ink-muted)', cursor: 'pointer',
+                            display: 'grid', placeItems: 'center', fontSize: 14,
+                            transition: 'all .15s',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ink-muted)'; e.currentTarget.style.borderColor = 'var(--line)'; }}
+                        >
+                          ↓
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
-              {isGenerating && (
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  background: 'rgba(0,0,0,0.6)',
-                  display: 'grid', placeItems: 'center',
-                }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {[0, 1, 2].map(i => (
-                      <span key={i} style={{
-                        width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)',
-                        animation: `typing 1.2s ${i * 0.15}s ease-in-out infinite`,
-                      }} />
+
+                {!confirmed ? (
+                  <button
+                    onClick={handleConfirm}
+                    style={{
+                      width: '100%', marginTop: 12,
+                      border: '1px solid var(--accent)', borderRadius: 99,
+                      background: 'var(--accent)', color: '#FFFFFF',
+                      cursor: 'pointer', padding: '10px 22px', fontSize: 13, fontWeight: 700,
+                    }}
+                  >
+                    {t('createOc.confirm')}
+                  </button>
+                ) : (
+                  <div style={{
+                    marginTop: 12, padding: '10px 16px', borderRadius: 99,
+                    border: '1px solid var(--accent)',
+                    background: 'rgba(255,77,109,0.08)',
+                    color: 'var(--accent)', fontSize: 13, fontWeight: 600, textAlign: 'center',
+                  }}>
+                    {t('createOc.confirmed')}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{
+                position: 'relative', borderRadius: 16, border: '1px solid var(--line)',
+                background: '#0A0A0A', minHeight: 200, maxHeight: 320,
+                display: 'grid', placeItems: 'center', overflow: 'hidden',
+                boxShadow: '0 0 0 1px rgba(255,45,85,.15) inset',
+              }}>
+                {isGenerating ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, width: '90%', height: '80%' }}>
+                    {[0, 1].map(i => (
+                      <div key={i} style={{
+                        borderRadius: 12, border: '1px solid var(--line)',
+                        background: 'rgba(255,255,255,0.02)',
+                        display: 'grid', placeItems: 'center',
+                      }}>
+                        <LoadingDots />
+                      </div>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Confirm button */}
-            {preview && !confirmed && (
-              <button
-                onClick={handleConfirm}
-                style={{
-                  width: '100%', marginTop: 12,
-                  border: '1px solid var(--accent)', borderRadius: 99,
-                  background: 'var(--accent)', color: '#FFFFFF',
-                  cursor: 'pointer', padding: '10px 22px', fontSize: 13, fontWeight: 700,
-                }}
-              >
-                {t('createOc.confirm')}
-              </button>
-            )}
-            {confirmed && (
-              <div style={{
-                marginTop: 12, padding: '10px 16px', borderRadius: 99,
-                border: '1px solid var(--accent)',
-                background: 'rgba(255,77,109,0.08)',
-                color: 'var(--accent)', fontSize: 13, fontWeight: 600, textAlign: 'center',
-              }}>
-                {t('createOc.confirmed')}
+                ) : (
+                  <div style={{ textAlign: 'center' }}>
+                    <OCMark scale={1.2} />
+                    <div className="mono" style={{ marginTop: 12, fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '0.16em' }}>
+                      {t('createOc.previewEmpty')}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
 
         {/* Tips */}
-        <div className="glass-soft" style={{
-          padding: '14px 18px', borderRadius: 14,
-        }}>
+        <div className="glass-soft" style={{ padding: '14px 18px', borderRadius: 14 }}>
           <div className="mono" style={{ fontSize: 9, color: 'var(--ink-faint)', letterSpacing: '0.18em', marginBottom: 8, textTransform: 'uppercase' }}>
             {t('createOc.tips')}
           </div>
@@ -232,12 +425,65 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
   );
 }
 
-function buildPrompt(description: string, styleLabel: string): string {
-  return `为 OCWORLD 生成一张 16:9 的原创 OC 全身角色概念图。
-角色描述：${description}
+function SectionLabel({ text }: { text: string }) {
+  return (
+    <div className="mono" style={{
+      fontSize: 10, color: 'var(--ink-subtle)', letterSpacing: '0.22em',
+      marginBottom: 12, textTransform: 'uppercase',
+    }}>
+      {text}
+    </div>
+  );
+}
+
+function LoadingDots() {
+  return (
+    <div style={{ display: 'flex', gap: 6 }}>
+      {[0, 1, 2].map(i => (
+        <span key={i} style={{
+          width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)',
+          animation: `typing 1.2s ${i * 0.15}s ease-in-out infinite`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+function readAndResize(file: File, maxDim: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Invalid image'));
+      img.onload = () => {
+        const { width, height } = img;
+        if (width <= maxDim && height <= maxDim) {
+          resolve(reader.result as string);
+          return;
+        }
+        const ratio = Math.min(maxDim / width, maxDim / height);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width * ratio);
+        canvas.height = Math.round(height * ratio);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function buildPrompt(description: string, styleLabel: string, keywords: string[]): string {
+  const keywordLine = keywords.length > 0
+    ? `\n参考照片提取的关键特征：${keywords.join('、')}`
+    : '';
+  return `为 OCWORLD 生成一张竖屏 9:16 的原创 OC 全身角色概念图。
+角色描述：${description}${keywordLine}
 风格：${styleLabel}
 要求：
-- 全身立绘，正面或 3/4 侧面
+- 竖屏构图，全身立绘，正面或 3/4 侧面
 - 纯白或透明背景
 - 高质量，细节丰富
 - 适合作为桌面虚拟角色展示`;

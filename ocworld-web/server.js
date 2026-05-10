@@ -58,7 +58,7 @@ app.post('/api/generate-image', async (req, res) => {
         model: IMAGE_MODEL,
         prompt,
         n: 1,
-        size: imageSize || (aspectRatio === '16:9' ? '1792x1024' : '1024x1024'),
+        size: imageSize || ({ '16:9': '1792x1024', '9:16': '1024x1792' }[aspectRatio] || '1024x1024'),
         response_format: 'b64_json',
       }),
     });
@@ -75,7 +75,8 @@ app.post('/api/generate-image', async (req, res) => {
       return res.status(500).json({ error: 'No image data in response' });
     }
 
-    res.json({ dataUrl: `data:image/png;base64,${imageB64}` });
+    const dataUrl = imageB64.startsWith('data:') ? imageB64 : `data:image/png;base64,${imageB64}`;
+    res.json({ dataUrl });
   } catch (err) {
     console.error('Image generation failed:', err.message);
     res.status(500).json({ error: err.message });
