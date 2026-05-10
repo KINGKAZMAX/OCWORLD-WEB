@@ -38,4 +38,4 @@ export interface Tweaks {
 }
 
 export type Lang = 'zh' | 'en';
-export type ViewId = 'home' | 'chat' | 'world' | 'rewind' | 'memory' | 'settings';
+export type ViewId = 'home' | 'chat' | 'world' | 'rewind' | 'memory' | 'settings' | 'create-oc';

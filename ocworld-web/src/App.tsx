@@ -12,6 +12,7 @@ import WorldView from '@/pages/WorldView';
 import RewindView from '@/pages/RewindView';
 import MemoryView from '@/pages/MemoryView';
 import SettingsView from '@/pages/SettingsView';
+import CreateOcView from '@/pages/CreateOcView';
 import { api, fallbackReply } from '@/lib/api';
 import type { ViewId, Message, Session } from '@/types';
 
@@ -54,10 +55,13 @@ function AppContent() {
     return init;
   });
   const [activeSessionId, setActiveSessionId] = useState('s1');
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | undefined>(() => {
+    return localStorage.getItem('ocworld.avatar') || undefined;
+  });
 
   useEffect(() => {
     const path = location.pathname.slice(1) as ViewId;
-    if (['home', 'chat', 'world', 'rewind', 'memory', 'settings'].includes(path)) {
+    if (['home', 'chat', 'world', 'rewind', 'memory', 'settings', 'create-oc'].includes(path)) {
       setActive(path);
     }
   }, [location]);
@@ -151,7 +155,7 @@ function AppContent() {
   return (
     <GlassShell>
       {splashState !== 'off' && (
-        <SplashScreen onEnter={dismissSplash} fadingOut={splashState === 'fading'} />
+        <SplashScreen onEnter={dismissSplash} onCreateOc={() => { dismissSplash(); navigate('/create-oc'); }} fadingOut={splashState === 'fading'} />
       )}
 
       <Sidebar
@@ -169,10 +173,10 @@ function AppContent() {
       }}>
         <Routes>
           <Route path="/" element={
-            <HomeView onSendTask={sendInSession} onPickQuickStart={handleQuickStart} />
+            <HomeView onSendTask={sendInSession} onPickQuickStart={handleQuickStart} avatarDataUrl={avatarDataUrl} />
           } />
           <Route path="/home" element={
-            <HomeView onSendTask={sendInSession} onPickQuickStart={handleQuickStart} />
+            <HomeView onSendTask={sendInSession} onPickQuickStart={handleQuickStart} avatarDataUrl={avatarDataUrl} />
           } />
           <Route path="/chat" element={
             <ChatView
@@ -187,6 +191,9 @@ function AppContent() {
           <Route path="/rewind" element={<RewindView />} />
           <Route path="/memory" element={<MemoryView />} />
           <Route path="/settings" element={<SettingsView />} />
+          <Route path="/create-oc" element={
+            <CreateOcView onCreated={(url) => setAvatarDataUrl(url)} />
+          } />
         </Routes>
       </main>
 

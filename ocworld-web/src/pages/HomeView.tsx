@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLang } from '@/hooks/useLang';
 import ViewHeader from '@/components/ViewHeader';
 import Composer from '@/components/Composer';
@@ -21,6 +22,7 @@ const GATE_ITEMS = [
 
 export default function HomeView({ onSendTask, onPickQuickStart, avatarDataUrl }: HomeViewProps) {
   const { t, lang } = useLang();
+  const navigate = useNavigate();
   const [text, setText] = useState('');
 
   return (
@@ -31,6 +33,45 @@ export default function HomeView({ onSendTask, onPickQuickStart, avatarDataUrl }
         flex: 1, display: 'flex', flexDirection: 'column',
         padding: '32px 56px 60px', maxWidth: 960, width: '100%', margin: '0 auto',
       }}>
+        {/* Create OC CTA — prominent banner */}
+        {!avatarDataUrl && (
+          <button
+            onClick={() => navigate('/create-oc')}
+            className="glass-strong"
+            style={{
+              width: '100%', marginBottom: 24,
+              padding: '18px 24px', borderRadius: 16,
+              border: '1px solid var(--accent)',
+              cursor: 'pointer', textAlign: 'left',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              transition: 'all .2s',
+              boxShadow: '0 0 28px rgba(255,45,85,0.10)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 0 36px rgba(255,45,85,0.18)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 0 28px rgba(255,45,85,0.10)';
+            }}
+          >
+            <div>
+              <div className="grotesk" style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent)', marginBottom: 4 }}>
+                {t('home.createOc')}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>
+                {t('createOc.subtitle')}
+              </div>
+            </div>
+            <span style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: 'var(--accent)', color: '#FFFFFF',
+              display: 'grid', placeItems: 'center', fontSize: 18, fontWeight: 700,
+            }}>→</span>
+          </button>
+        )}
+
         {/* OC stage with greeting card */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 28, alignItems: 'center', marginBottom: 32 }}>
           <div className="glass-soft" style={{

@@ -46,6 +46,10 @@ export const I18N: Record<string, Record<Lang, string>> = {
   'chat.subtitle':        { zh: 'TALK', en: 'TALK' },
   'chat.new':             { zh: '新对话', en: 'New chat' },
   'chat.count':           { zh: '条', en: 'msgs' },
+  'chat.opener.tired':    { zh: '有点累，想聊聊', en: 'A bit tired, wanna talk' },
+  'chat.opener.organize': { zh: '帮我整理一下思路', en: 'Help me organize my thoughts' },
+  'chat.opener.happy':    { zh: '今天发生了开心的事', en: 'Something good happened today' },
+  'chat.opener.delay':    { zh: '我又拖延了…', en: 'I procrastinated again…' },
 
   'rewind.subtitle':      { zh: 'REWIND · 27 天的相处', en: 'REWIND · 27 days together' },
   'rewind.note.kicker':   { zh: 'NOTE', en: 'NOTE' },
@@ -75,6 +79,31 @@ export const I18N: Record<string, Record<Lang, string>> = {
   'topbar.lang':          { zh: '语言', en: 'Language' },
   'topbar.theme.light':   { zh: '浅色', en: 'Light' },
   'topbar.theme.dark':    { zh: '深色', en: 'Dark' },
+
+  'createOc.title':       { zh: '创作 OC', en: 'Create OC' },
+  'createOc.subtitle':    { zh: '为你的世界生成一个专属角色', en: 'Generate a character for your world' },
+  'createOc.style':       { zh: '视觉风格', en: 'Visual Style' },
+  'createOc.photoRef':    { zh: '参考照片', en: 'Reference Photo' },
+  'createOc.uploadHint':  { zh: '拖拽或点击上传你的照片', en: 'Drag & drop or click to upload' },
+  'createOc.uploadSub':   { zh: '自动识别外貌特征，生成专属角色', en: 'Auto-detect appearance for character generation' },
+  'createOc.analyzing':   { zh: '正在识别外貌特征…', en: 'Analyzing appearance…' },
+  'createOc.keywords':    { zh: '识别结果', en: 'Detected Features' },
+  'createOc.clearPhoto':  { zh: '移除', en: 'Remove' },
+  'createOc.analyzeError':{ zh: '识别失败，请手动描述角色', en: 'Analysis failed, describe manually' },
+  'createOc.prompt':      { zh: '角色描述', en: 'Character Prompt' },
+  'createOc.placeholder': { zh: '描述你想生成的 OC…', en: 'Describe the OC you want…' },
+  'createOc.preview':     { zh: '预览', en: 'Preview' },
+  'createOc.previewEmpty':{ zh: '等待生成…', en: 'Waiting to generate…' },
+  'createOc.generate':    { zh: '生成 OC', en: 'Generate OC' },
+  'createOc.generating':  { zh: '生成中…', en: 'Generating…' },
+  'createOc.useDefault':  { zh: '使用默认描述', en: 'Use default' },
+  'createOc.confirm':     { zh: '确认使用这个角色', en: 'Confirm this character' },
+  'createOc.confirmed':   { zh: '✓ 已保存为当前 OC', en: '✓ Saved as current OC' },
+  'createOc.error':       { zh: '生成失败，请重试', en: 'Generation failed, please retry' },
+  'createOc.tips':        { zh: '提示', en: 'Tips' },
+  'createOc.tipsBody':    { zh: '上传照片可自动提取外貌关键词，也可以直接手写描述。内容越详细，生成的角色越贴近你的想象——外貌、服装、配饰、气质都可以写进去。', en: 'Upload a photo to auto-extract appearance keywords, or write a description manually. The more detail you include — appearance, clothing, accessories, vibe — the closer the result.' },
+
+  'home.createOc':        { zh: '＋ 创作新 OC', en: '＋ Create New OC' },
 };
 
 export function t(key: string, lang: Lang): string {

@@ -29,13 +29,16 @@ export default function Sidebar({ active, setActive, collapsed, setCollapsed, on
   const { lang, t } = useLang();
   const intim = useIntimacy();
 
-  const nav = [
+  const mainNav = [
     { id: 'home' as ViewId, icon: IconHome, key: 'nav.home' },
     { id: 'chat' as ViewId, icon: IconChat, key: 'nav.chat' },
     { id: 'world' as ViewId, icon: IconRewind, key: 'nav.world' },
     { id: 'rewind' as ViewId, icon: IconRewind, key: 'nav.rewind' },
     { id: 'memory' as ViewId, icon: IconBook, key: 'nav.memory' },
     { id: 'settings' as ViewId, icon: IconBars, key: 'nav.settings' },
+  ];
+  const bottomNav = [
+    { id: 'create-oc' as ViewId, icon: IconPlus, key: 'createOc.title' },
   ];
 
   if (collapsed) {
@@ -53,7 +56,23 @@ export default function Sidebar({ active, setActive, collapsed, setCollapsed, on
         <div style={{ height: 6 }} />
         <div style={{ padding: '4px 0' }}><OCMark scale={0.55} animated={false} /></div>
         <div style={{ height: 8, width: 22, borderTop: '1px solid var(--line-soft)' }} />
-        {nav.map(n => {
+        {mainNav.map(n => {
+          const on = active === n.id;
+          return (
+            <button key={n.id} onClick={() => setActive(n.id)} title={t(n.key)}
+              style={{
+                ...collapsedIconStyle,
+                color: on ? 'var(--accent)' : 'var(--ink-muted)',
+                background: on ? 'var(--glass-bg-strong)' : 'transparent',
+                border: on ? '1px solid var(--glass-border-strong)' : '1px solid transparent',
+                backdropFilter: on ? 'blur(20px)' : 'none',
+              }}>
+              <n.icon size={16} />
+            </button>
+          );
+        })}
+        <div style={{ height: 8, width: 22, borderTop: '1px solid var(--line-soft)' }} />
+        {bottomNav.map(n => {
           const on = active === n.id;
           return (
             <button key={n.id} onClick={() => setActive(n.id)} title={t(n.key)}
@@ -125,7 +144,7 @@ export default function Sidebar({ active, setActive, collapsed, setCollapsed, on
 
       {/* Primary nav */}
       <div style={{ padding: '4px 8px 8px' }}>
-        {nav.map(n => {
+        {mainNav.map(n => {
           const on = active === n.id;
           return (
             <button key={n.id} onClick={() => setActive(n.id)}
@@ -156,6 +175,47 @@ export default function Sidebar({ active, setActive, collapsed, setCollapsed, on
                 }} />
               )}
               <span style={{ width: 18, display: 'grid', placeItems: 'center', color: on ? 'var(--accent)' : 'currentColor' }}>
+                <n.icon size={15} />
+              </span>
+              <span style={{ flex: 1 }}>{t(n.key)}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Bottom nav: Create OC */}
+      <div style={{ padding: '4px 8px 8px', borderTop: '1px solid var(--line-soft)', marginTop: 4 }}>
+        {bottomNav.map(n => {
+          const on = active === n.id;
+          return (
+            <button key={n.id} onClick={() => setActive(n.id)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 11,
+                padding: '8px 10px', marginBottom: 2,
+                borderRadius: 9,
+                border: 'none',
+                background: on ? 'var(--glass-bg-strong)' : 'transparent',
+                color: on ? 'var(--accent)' : 'var(--ink-muted)',
+                fontSize: 13,
+                cursor: 'pointer', textAlign: 'left',
+                transition: 'all .15s',
+                position: 'relative',
+                fontWeight: on ? 600 : 500,
+                backdropFilter: on ? 'blur(20px)' : 'none',
+                WebkitBackdropFilter: on ? 'blur(20px)' : 'none',
+                boxShadow: on ? '0 1px 0 rgba(255,255,255,0.4) inset, 0 1px 2px rgba(0,0,0,0.04)' : 'none',
+              }}
+              onMouseEnter={(e) => { if (!on) { e.currentTarget.style.background = 'var(--glass-bg-soft)'; e.currentTarget.style.color = 'var(--accent)'; } }}
+              onMouseLeave={(e) => { if (!on) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-muted)'; } }}
+            >
+              {on && (
+                <span style={{
+                  position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)',
+                  width: 3, height: 16, borderRadius: 2,
+                  background: 'var(--accent)',
+                }} />
+              )}
+              <span style={{ width: 18, display: 'grid', placeItems: 'center' }}>
                 <n.icon size={15} />
               </span>
               <span style={{ flex: 1 }}>{t(n.key)}</span>

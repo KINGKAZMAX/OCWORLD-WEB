@@ -26,6 +26,15 @@ export interface ImageGenResponse {
   dataUrl: string;
 }
 
+export interface AnalyzePhotoPayload {
+  imageDataUrl: string;
+}
+
+export interface AnalyzePhotoResponse {
+  keywords: string[];
+  description: string;
+}
+
 export interface RuntimeStatus {
   native: boolean;
   hermes: { state?: string } | null;
@@ -64,6 +73,11 @@ export const api = {
   /** Generate an OC portrait image */
   async generateImage(payload: ImageGenPayload): Promise<ImageGenResponse> {
     return post<ImageGenResponse>('/generate-image', payload);
+  },
+
+  /** Analyze a photo to extract appearance keywords */
+  async analyzePhoto(payload: AnalyzePhotoPayload): Promise<AnalyzePhotoResponse> {
+    return post<AnalyzePhotoResponse>('/analyze-photo', payload);
   },
 
   /** Get runtime status (Hermes, TTS, AirJelly) */

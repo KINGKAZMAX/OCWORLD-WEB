@@ -4,10 +4,11 @@ import OCMark from './OCMark';
 
 interface SplashScreenProps {
   onEnter: () => void;
+  onCreateOc?: () => void;
   fadingOut?: boolean;
 }
 
-export default function SplashScreen({ onEnter, fadingOut }: SplashScreenProps) {
+export default function SplashScreen({ onEnter, onCreateOc, fadingOut }: SplashScreenProps) {
   const { lang } = useLang();
   const [shown, setShown] = useState(0);
   const [ready, setReady] = useState(false);
@@ -225,7 +226,7 @@ export default function SplashScreen({ onEnter, fadingOut }: SplashScreenProps) 
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FFFFFF' }} />
               </button>
               <button
-                onClick={onEnter}
+                onClick={onCreateOc || onEnter}
                 className="glass-soft"
                 style={{
                   appearance: 'none', cursor: 'pointer',
