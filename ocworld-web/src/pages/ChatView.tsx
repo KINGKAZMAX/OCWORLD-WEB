@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLang } from '@/hooks/useLang';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import ViewHeader from '@/components/ViewHeader';
 import Composer from '@/components/Composer';
 import OCMark from '@/components/OCMark';
@@ -11,12 +12,15 @@ interface ChatViewProps {
   isThinking: boolean;
   sessionTitle?: string;
   ttsEnabled?: boolean;
+  avatarDataUrl?: string;
 }
 
-export default function ChatView({ messages, onSend, isThinking, sessionTitle, ttsEnabled }: ChatViewProps) {
+export default function ChatView({ messages, onSend, isThinking, sessionTitle, ttsEnabled, avatarDataUrl }: ChatViewProps) {
   const { t, lang } = useLang();
+  const isMobile = useIsMobile();
   const [text, setText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const px = isMobile ? 16 : 56;
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -24,19 +28,19 @@ export default function ChatView({ messages, onSend, isThinking, sessionTitle, t
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <ViewHeader titleKey="nav.chat" subtitleRaw={`${t('chat.subtitle')} · ${sessionTitle || t('chat.new')}`} rightRaw={`${messages.length} ${t('chat.count')} · ${ttsEnabled ? 'TTS On' : 'TTS off'}`} />
+      <ViewHeader titleKey="nav.chat" subtitleRaw={`${t('chat.subtitle')} · ${sessionTitle || t('chat.new')}`} rightRaw={isMobile ? undefined : `${messages.length} ${t('chat.count')} · ${ttsEnabled ? 'TTS On' : 'TTS off'}`} />
 
       {messages.length === 0 ? (
         <ChatEmpty onSend={onSend} />
       ) : (
         <>
-          <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '24px 56px 0' }}>
+          <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: `24px ${px}px 0` }}>
             <div style={{ maxWidth: 760, margin: '0 auto' }}>
-              {messages.map((m, i) => <Bubble key={i} role={m.role} text={m.text} time={m.time} />)}
-              {isThinking && <ThinkingBubble />}
+              {messages.map((m, i) => <Bubble key={i} role={m.role} text={m.text} time={m.time} avatarDataUrl={avatarDataUrl} />)}
+              {isThinking && <ThinkingBubble avatarDataUrl={avatarDataUrl} />}
             </div>
           </div>
-          <div style={{ padding: '14px 56px 24px' }}>
+          <div style={{ padding: `14px ${px}px 24px` }}>
             <div style={{ maxWidth: 760, margin: '0 auto' }}>
               <Composer text={text} setText={setText}
                 onSubmit={() => { if (text.trim()) { onSend(text); setText(''); } }}
@@ -53,6 +57,7 @@ export default function ChatView({ messages, onSend, isThinking, sessionTitle, t
 
 function ChatEmpty({ onSend }: { onSend: (text: string) => void }) {
   const { t, lang } = useLang();
+  const isMobile = useIsMobile();
   const [text, setText] = useState('');
   const openers = [
     t('chat.opener.tired'),
@@ -64,10 +69,10 @@ function ChatEmpty({ onSend }: { onSend: (text: string) => void }) {
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', padding: '0 56px',
+      justifyContent: 'center', padding: isMobile ? '0 16px' : '0 56px',
     }}>
-      <OCMark scale={1.5} />
-      <div className="heitai" style={{ marginTop: 22, fontSize: 38, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
+      <OCMark scale={isMobile ? 1 : 1.5} />
+      <div className="heitai" style={{ marginTop: 22, fontSize: isMobile ? 26 : 38, color: 'var(--ink)', letterSpacing: '-0.02em' }}>
         {t('chat.empty.title')}<span style={{ color: 'var(--accent)' }}>。</span>
       </div>
       <div className="mono" style={{ marginTop: 8, fontSize: 11, color: 'var(--ink-faint)', letterSpacing: '0.22em' }}>
@@ -100,7 +105,7 @@ function ChatEmpty({ onSend }: { onSend: (text: string) => void }) {
   );
 }
 
-function Bubble({ role, text, time }: { role: 'user' | 'oc'; text: string; time?: string }) {
+function Bubble({ role, text, time, avatarDataUrl }: { role: 'user' | 'oc'; text: string; time?: string; avatarDataUrl?: string }) {
   const { lang } = useLang();
   const isOC = role === 'oc';
   return (
@@ -111,7 +116,14 @@ function Bubble({ role, text, time }: { role: 'user' | 'oc'; text: string; time?
     }}>
       {isOC ? (
         <div style={{ flexShrink: 0, marginTop: 2 }}>
-          <OCMark scale={0.6} animated={false} />
+          {avatarDataUrl ? (
+            <img src={avatarDataUrl} alt="OC" style={{
+              width: 30, height: 30, borderRadius: '50%',
+              objectFit: 'cover', border: '1px solid var(--line)',
+            }} />
+          ) : (
+            <OCMark scale={0.6} animated={false} />
+          )}
         </div>
       ) : (
         <div style={{
@@ -147,11 +159,18 @@ function Bubble({ role, text, time }: { role: 'user' | 'oc'; text: string; time?
   );
 }
 
-function ThinkingBubble() {
+function ThinkingBubble({ avatarDataUrl }: { avatarDataUrl?: string }) {
   return (
     <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
       <div style={{ flexShrink: 0, marginTop: 2 }}>
-        <OCMark scale={0.6} animated={false} />
+        {avatarDataUrl ? (
+          <img src={avatarDataUrl} alt="OC" style={{
+            width: 30, height: 30, borderRadius: '50%',
+            objectFit: 'cover', border: '1px solid var(--line)',
+          }} />
+        ) : (
+          <OCMark scale={0.6} animated={false} />
+        )}
       </div>
       <div className="glass-strong" style={{
         padding: '14px 16px',

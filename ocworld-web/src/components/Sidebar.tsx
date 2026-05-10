@@ -14,6 +14,7 @@ interface SidebarProps {
   setCollapsed: (v: boolean) => void;
   onNewSession: () => void;
   onOpenPalette: () => void;
+  avatarDataUrl?: string;
 }
 
 const DEFAULT_SESSIONS = [
@@ -25,7 +26,7 @@ const DEFAULT_SESSIONS = [
   { id: 's6', title: '周末计划讨论', date: '3周前', preview: '想去看那个展览。', tag: 'earlier' },
 ];
 
-export default function Sidebar({ active, setActive, collapsed, setCollapsed, onNewSession, onOpenPalette }: SidebarProps) {
+export default function Sidebar({ active, setActive, collapsed, setCollapsed, onNewSession, onOpenPalette, avatarDataUrl }: SidebarProps) {
   const { lang, t } = useLang();
   const intim = useIntimacy();
 
@@ -105,7 +106,14 @@ export default function Sidebar({ active, setActive, collapsed, setCollapsed, on
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <OCMark scale={0.45} animated={false} />
+          {avatarDataUrl ? (
+            <img src={avatarDataUrl} alt="OC" style={{
+              width: 28, height: 28, borderRadius: '50%',
+              objectFit: 'cover', border: '1px solid var(--line)',
+            }} />
+          ) : (
+            <OCMark scale={0.45} animated={false} />
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
             <span className="grotesk" style={{ fontSize: 13.5, color: 'var(--ink)', letterSpacing: '0.04em', fontWeight: 700 }}>OCWORLD</span>
             <span className="mono" style={{ fontSize: 9, color: 'var(--ink-faint)', letterSpacing: '0.18em', marginTop: 1 }}>v0.4 · SIGNAL</span>

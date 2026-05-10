@@ -169,6 +169,7 @@ function AppContent() {
           setCollapsed={setCollapsed}
           onNewSession={newSession}
           onOpenPalette={() => {}}
+          avatarDataUrl={avatarDataUrl}
         />
       )}
 
@@ -191,6 +192,7 @@ function AppContent() {
               isThinking={isThinking}
               sessionTitle={activeSession?.title}
               ttsEnabled={ttsEnabled}
+              avatarDataUrl={avatarDataUrl}
             />
           } />
           <Route path="/world" element={<WorldView />} />

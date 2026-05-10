@@ -28,19 +28,33 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
   const isMobile = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [description, setDescription] = useState(lang === 'en' ? DEFAULT_DESCRIPTION_EN : DEFAULT_DESCRIPTION_ZH);
-  const [selectedStyle, setSelectedStyle] = useState('pixel');
+  const [description, setDescription] = useState(() => {
+    return localStorage.getItem('ocworld.createOc.desc') || (lang === 'en' ? DEFAULT_DESCRIPTION_EN : DEFAULT_DESCRIPTION_ZH);
+  });
+  const [selectedStyle, setSelectedStyle] = useState(() => {
+    return localStorage.getItem('ocworld.createOc.style') || 'pixel';
+  });
   const [isGenerating, setIsGenerating] = useState(false);
-  const [previews, setPreviews] = useState<string[]>([]);
-  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [previews, setPreviews] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('ocworld.createOc.previews');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [selectedIdx, setSelectedIdx] = useState(() => {
+    return Number(localStorage.getItem('ocworld.createOc.selectedIdx')) || 0;
+  });
   const [error, setError] = useState('');
-  const [confirmed, setConfirmed] = useState(false);
+  const [confirmed, setConfirmed] = useState(() => {
+    return localStorage.getItem('ocworld.createOc.confirmed') === '1';
+  });
 
   const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [analyzeError, setAnalyzeError] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
+  const analyzePromiseRef = useRef<Promise<string[]> | null>(null);
 
   const selectedPreview = previews[selectedIdx] || null;
 
@@ -51,15 +65,18 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
     setAnalyzeError('');
     setKeywords([]);
     setIsAnalyzing(true);
-    try {
-      const res = await api.analyzePhoto({ imageDataUrl: dataUrl });
+    const promise = api.analyzePhoto({ imageDataUrl: dataUrl }).then(res => {
       setKeywords(res.keywords);
       if (res.description) setDescription(res.description);
-    } catch (err: any) {
+      return res.keywords;
+    }).catch((err: any) => {
       setAnalyzeError(err.message || t('createOc.analyzeError'));
-    } finally {
+      return [] as string[];
+    }).finally(() => {
       setIsAnalyzing(false);
-    }
+      analyzePromiseRef.current = null;
+    });
+    analyzePromiseRef.current = promise;
   };
 
   const handleDrop = (e: DragEvent) => {
@@ -88,8 +105,16 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
     setError('');
     setConfirmed(false);
     setPreviews([]);
+    localStorage.removeItem('ocworld.createOc.previews');
+    localStorage.removeItem('ocworld.createOc.confirmed');
+    localStorage.setItem('ocworld.createOc.desc', description);
+    localStorage.setItem('ocworld.createOc.style', selectedStyle);
     try {
-      const prompt = buildPrompt(description, selectedStyle, keywords);
+      let finalKeywords = keywords;
+      if (analyzePromiseRef.current) {
+        finalKeywords = await analyzePromiseRef.current;
+      }
+      const prompt = buildPrompt(description, selectedStyle, finalKeywords);
       const payload = { prompt, aspectRatio: '9:16' };
       const results = await Promise.allSettled([
         api.generateImage(payload),
@@ -101,6 +126,8 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
       if (urls.length === 0) throw new Error(t('createOc.error'));
       setPreviews(urls);
       setSelectedIdx(0);
+      localStorage.setItem('ocworld.createOc.previews', JSON.stringify(urls));
+      localStorage.setItem('ocworld.createOc.selectedIdx', '0');
     } catch (err: any) {
       setError(err.message || t('createOc.error'));
     } finally {
@@ -113,6 +140,7 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
     setConfirmed(true);
     localStorage.setItem('ocworld.avatar', selectedPreview);
     localStorage.setItem('ocworld.avatarDesc', description);
+    localStorage.setItem('ocworld.createOc.confirmed', '1');
     onCreated?.(selectedPreview, description);
     try {
       const gender = await api.detectGender(description);
@@ -315,7 +343,7 @@ export default function CreateOcView({ onCreated }: CreateOcViewProps) {
                   {previews.map((src, i) => (
                     <div
                       key={i}
-                      onClick={() => { setSelectedIdx(i); setConfirmed(false); }}
+                      onClick={() => { setSelectedIdx(i); setConfirmed(false); localStorage.setItem('ocworld.createOc.selectedIdx', String(i)); localStorage.removeItem('ocworld.createOc.confirmed'); }}
                       style={{
                         position: 'relative', borderRadius: 14, overflow: 'hidden',
                         border: `2px solid ${selectedIdx === i ? 'var(--accent)' : 'var(--line)'}`,

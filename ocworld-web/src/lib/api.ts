@@ -85,13 +85,28 @@ export const api = {
     return get<RuntimeStatus>('/runtime-status');
   },
 
-  /** Text-to-speech — returns audio and plays it */
+  /** Text-to-speech — streaming sentence-by-sentence playback */
   async speak(text: string): Promise<void> {
     const gender = localStorage.getItem('ocworld.ocGender') || 'female';
-    const res = await post<{ audioBase64: string; mimeType: string }>('/speak', { text, gender });
-    if (res.audioBase64) {
-      const audio = new Audio(`data:${res.mimeType};base64,${res.audioBase64}`);
-      await audio.play();
+    const sentences = splitSentences(text);
+    if (sentences.length === 0) return;
+
+    const audioPromises = sentences.map(s =>
+      post<{ audioBase64: string; mimeType: string }>('/speak', { text: s, gender })
+    );
+
+    for (let i = 0; i < audioPromises.length; i++) {
+      try {
+        const res = await audioPromises[i];
+        if (res.audioBase64) {
+          const audio = new Audio(`data:${res.mimeType};base64,${res.audioBase64}`);
+          await new Promise<void>((resolve, reject) => {
+            audio.onended = () => resolve();
+            audio.onerror = () => reject();
+            audio.play().catch(reject);
+          });
+        }
+      } catch { break; }
     }
   },
 
@@ -106,6 +121,11 @@ export const api = {
     return get<{ status: string }>('/health');
   },
 };
+
+function splitSentences(text: string): string[] {
+  const parts = text.match(/[^。！？!?\n]+[。！？!?\n]?/g) || [text];
+  return parts.map(s => s.trim()).filter(s => s.length > 0);
+}
 
 /** Fallback chat for demo / offline mode */
 export function fallbackReply(text: string, lang: 'zh' | 'en'): string {
