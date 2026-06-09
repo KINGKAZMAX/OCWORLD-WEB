@@ -6,6 +6,8 @@ import { createHash } from "node:crypto";
 const root = process.cwd();
 const indexPath = join(root, "frontend-v4", "index.html");
 const landingPath = join(root, "frontend-v4", "src", "v5", "zealwish-landing.jsx");
+const v4AppPath = join(root, "frontend-v4", "src", "v4", "app.jsx");
+const bridgePath = join(root, "frontend-v4", "src", "v4", "ocworld-bridge.jsx");
 const architecturePath = join(root, "docs", "architecture", "web-architecture.md");
 const chinesePattern = /[\u4e00-\u9fff]/;
 const expectedMainCharacterHash = "c8b5166f56b2fbb5e58999cea670732a5e6516f8b9a4b2f07aa1ae6ffe11cf4c";
@@ -35,6 +37,32 @@ describe("frontend-v4 ZEALWISH Web3 landing", () => {
     expect(landing).toContain("Create Character Passport");
     expect(landing).not.toContain("OCWORLD");
     expect(landing).not.toMatch(chinesePattern);
+  });
+
+  it("passes explicit launch intents from the landing page into the web app", () => {
+    const landing = readFileSync(landingPath, "utf8");
+
+    expect(landing).toContain("onLaunchApp('home')");
+    expect(landing).toContain("onLaunchApp('create')");
+    expect(landing).toContain("window.ZEALWISH_MOUNT_APP(appContainer, { intent })");
+  });
+
+  it("mounts the actual ZEALWISH web app shell with home/create entry modes", () => {
+    const app = readFileSync(v4AppPath, "utf8");
+
+    expect(app).toContain("function AppV3({ initialIntent = 'home' } = {})");
+    expect(app).toContain("initialIntent === 'create'");
+    expect(app).toContain('data-zealwish-app-shell="true"');
+    expect(app).toContain("window.ZEALWISH_MOUNT_APP = function(container, options = {})");
+    expect(app).toContain("<AppV3 initialIntent={intent} />");
+  });
+
+  it("keeps browser-only web functions usable without Electron runtime", () => {
+    const bridge = readFileSync(bridgePath, "utf8");
+
+    expect(bridge).toContain("ZEALWISH_BROWSER_AVATAR_FALLBACK");
+    expect(bridge).toContain('source: "browser-fallback"');
+    expect(bridge).not.toContain("Image generation is only available inside the oc-world Electron runtime.");
   });
 
   it("documents the preview and architecture contract in English", () => {

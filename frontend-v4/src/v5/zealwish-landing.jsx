@@ -19,7 +19,7 @@ function TopBar({ onLaunchApp }) {
         <a href="#ownership">Ownership</a>
         <a href="#worlds">Worlds</a>
       </nav>
-      <button className="wallet-button edge" onClick={onLaunchApp}>Launch App</button>
+      <button className="wallet-button edge" onClick={() => onLaunchApp('home')}>Launch App</button>
     </header>
   );
 }
@@ -75,7 +75,7 @@ function Hero({ onLaunchApp }) {
           Free will for your digital self. Connect a wallet, create a living AI companion, and shape a character passport that anchors identity, memory, and relationship continuity on-chain without turning the character into speculation.
         </p>
         <div className="actions">
-          <button className="primary-button edge" onClick={onLaunchApp}>Create Character Passport</button>
+          <button className="primary-button edge" onClick={() => onLaunchApp('create')}>Create Character Passport</button>
           <a className="secondary-button edge" href="#web3">Explore Web3 Layer</a>
         </div>
         <div className="signal-strip mono" aria-label="Product pillars">
@@ -114,7 +114,7 @@ function Ticker() {
 
 function Web3IntroSection() {
   const cards = [
-    ["01 / Wallet", "Wallet-Owned Identity", "The user begins with a wallet-controlled account, not another rented profile trapped inside one app."],
+    ["01 / Wallet", "Wallet-Owned Identity", "The user begins with a wallet-controlled account, not another platform-locked profile trapped inside one app."],
     ["02 / NFT", "Character Passport NFT", "A unique token can represent the AI character's identity, provenance, permissions, and future creator assets."],
     ["03 / Memory", "Memory Vault", "Important relationship memories can stay private off-chain while hashes, permissions, and ownership proofs preserve continuity."],
     ["04 / Chain", "Blockchain Anchor", "The chain is the neutral ownership layer that helps a character move into games, agent tools, and creator worlds."]
@@ -125,9 +125,9 @@ function Web3IntroSection() {
       <div className="thesis-panel edge">
         <div className="thesis-copy">
           <div className="tag mono">Built for ownership, not speculation</div>
-          <h2>A wallet-owned character, not another rented chatbot.</h2>
+          <h2>A wallet-owned character, not another platform-locked chatbot.</h2>
           <p>
-            For a Singapore-facing introduction, the Web3 story should be direct: wallet, NFT, and blockchain are not financial decoration. They explain who owns the character, how its identity is verified, and how its memory can survive beyond one platform.
+            The Web3 story is simple: wallet, NFT, and blockchain are ownership infrastructure. They clarify who controls the character, how identity can be verified, and how memory continuity can survive beyond one platform.
           </p>
         </div>
         <div className="thesis-grid">
@@ -267,9 +267,9 @@ function WorldsSection() {
           <div className="ledger-row mono"><time>DAY 100</time><strong>Portable identity exported to a new world</strong><span>future</span></div>
         </div>
         <aside className="creator-card edge">
-          <h3 className="display">Built for players, creators, and lonely humans.</h3>
+          <h3 className="display">Built for players, creators, collectors, and companion users.</h3>
           <p>
-            The audience is broad by design: ordinary users, game players, virtual character fans, creators, and anyone who wants a long-term AI companion that feels personally theirs.
+            The audience is broad by design: game players, virtual character fans, creators, collectors, and anyone who wants a long-term AI companion that feels personally theirs.
           </p>
           <div className="mini-grid">
             <div className="mini-tile"><b>Players</b>Bring an OC into game-like worlds.</div>
@@ -292,7 +292,7 @@ function FinalCTA({ onLaunchApp }) {
           ZEALWISH is a living character platform for the next generation of wallet-owned AI companions, memory-backed NFTs, digital identity, and user-owned worlds.
         </p>
         <div className="actions">
-          <button className="primary-button edge" onClick={onLaunchApp}>Create Your Character</button>
+          <button className="primary-button edge" onClick={() => onLaunchApp('create')}>Create Your Character</button>
           <a className="secondary-button edge" href="#ownership">View ownership layer</a>
         </div>
       </div>
@@ -303,13 +303,13 @@ function FinalCTA({ onLaunchApp }) {
 function App() {
   const [showApp, setShowApp] = useState(false);
 
-  const handleLaunchApp = useCallback(() => {
+  const handleLaunchApp = useCallback((intent = 'home') => {
     setShowApp(true);
     // After landing hides, mount the v4 app shell into a new container
     setTimeout(() => {
       const appContainer = document.getElementById('zealwish-app');
       if (appContainer && typeof window.ZEALWISH_MOUNT_APP === 'function') {
-        window.ZEALWISH_MOUNT_APP(appContainer);
+        window.ZEALWISH_MOUNT_APP(appContainer, { intent });
       }
     }, 100);
   }, []);

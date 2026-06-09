@@ -47,7 +47,7 @@ const OC_STYLE_LABELS = {
 
 function GlassShell({ children }) {
   return (
-    <div style={{
+    <div data-zealwish-app-shell="true" style={{
       width: '100%', height: '100%',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: 20, boxSizing: 'border-box',
@@ -91,16 +91,16 @@ function GlassShell({ children }) {
   );
 }
 
-function AppV3() {
+function AppV3({ initialIntent = 'home' } = {}) {
   const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS_V3);
   // first-run onboarding ritual
-  const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('ocworld.oc'));
+  const [showOnboarding, setShowOnboarding] = useState(() => initialIntent === 'create' || !localStorage.getItem('ocworld.oc'));
   const [oc, setOC] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ocworld.oc') || 'null') || { name: 'XZ' }; }
     catch { return { name: 'XZ' }; }
   });
-  const [splashState, setSplashState] = useState(() => localStorage.getItem('ocworld.oc') ? 'on' : 'off');
-  const [active, setActive] = useState('home');
+  const [splashState, setSplashState] = useState(() => (initialIntent === 'create' || !localStorage.getItem('ocworld.oc')) ? 'off' : 'on');
+  const [active, setActive] = useState(() => initialIntent === 'chat' ? 'chat' : 'home');
   const [collapsed, setCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const intim = useIntimacy();
@@ -508,6 +508,7 @@ function ResidentOCv2({ blush }) {
 }
 
 // Expose mount function for the landing page to call
-window.ZEALWISH_MOUNT_APP = function(container) {
-  ReactDOM.createRoot(container).render(<AppV3 />);
+window.ZEALWISH_MOUNT_APP = function(container, options = {}) {
+  const intent = options?.intent || 'home';
+  ReactDOM.createRoot(container).render(<AppV3 initialIntent={intent} />);
 };

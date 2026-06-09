@@ -6,6 +6,7 @@
 (function initOCWorldBridge() {
   const DEFAULT_USER_ID = "user-001";
   const DEFAULT_CHARACTER_ID = "char-001";
+  const ZEALWISH_BROWSER_AVATAR_FALLBACK = "assets/zealwish-main-character.png";
   let activeAudio = null;
 
   function nativeApi() {
@@ -129,7 +130,13 @@
   async function generateImage(input) {
     const api = nativeApi();
     if (!api?.imageGen?.generate) {
-      throw new Error("Image generation is only available inside the oc-world Electron runtime.");
+      return {
+        requestId: `browser-${Date.now()}`,
+        dataUrl: ZEALWISH_BROWSER_AVATAR_FALLBACK,
+        mimeType: "image/png",
+        source: "browser-fallback",
+        prompt: typeof input === "string" ? input : input?.prompt,
+      };
     }
     const payload = typeof input === "string" ? { prompt: input } : input;
     const result = await api.imageGen.generate(payload);

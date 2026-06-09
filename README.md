@@ -5,179 +5,220 @@
 # ZEALWISH
 
 <p align="center">
-  <a href="https://github.com/KINGKAZMAX/OCWORLD-WEB/stargazers"><img src="https://img.shields.io/github/stars/KINGKAZMAX/OCWORLD-WEB?style=for-the-badge&color=FF2D55&labelColor=0A0A0A" alt="Stars" /></a>
-  <a href="https://github.com/KINGKAZMAX/OCWORLD-WEB/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Private-FF2D55?style=for-the-badge&labelColor=0A0A0A" alt="License" /></a>
-  <img src="https://img.shields.io/badge/Built_with-React_18-FF2D55?style=for-the-badge&labelColor=0A0A0A" alt="React 18" />
-  <img src="https://img.shields.io/badge/Runtime-Electron_35-FF2D55?style=for-the-badge&labelColor=0A0A0A" alt="Electron" />
-  <img src="https://img.shields.io/badge/UCWS_Singapore-Hackathon_2026-FF2D55?style=for-the-badge&labelColor=0A0A0A" alt="UCWS 2026" />
+  <img src="https://img.shields.io/badge/Product-AI_character_platform-FF2D2D?style=for-the-badge&labelColor=0A0A0A" alt="AI character platform" />
+  <img src="https://img.shields.io/badge/Identity-Wallet_owned-FF2D2D?style=for-the-badge&labelColor=0A0A0A" alt="Wallet-owned identity" />
+  <img src="https://img.shields.io/badge/Stack-React_18_·_Electron_35-FF2D2D?style=for-the-badge&labelColor=0A0A0A" alt="React and Electron" />
+  <img src="https://img.shields.io/badge/Status-Active_prototype-FF2D2D?style=for-the-badge&labelColor=0A0A0A" alt="Active prototype" />
 </p>
 
 <p align="center">
-  <a href="#what-is-zealwish">What is ZEALWISH?</a> ·
-  <a href="#key-features">Features</a> ·
+  <a href="#what-is-zealwish">What it is</a> ·
+  <a href="#how-the-product-works">How it works</a> ·
   <a href="#screenshots">Screenshots</a> ·
-  <a href="#competitive-positioning">Competitive Edge</a> ·
-  <a href="#architecture">Architecture</a> ·
   <a href="#quick-start">Quick Start</a> ·
-  <a href="#faq">FAQ</a> ·
+  <a href="#architecture">Architecture</a> ·
   <a href="#roadmap">Roadmap</a>
 </p>
 
 ---
 
-> **ZEALWISH is the first AI character platform where you create, grow, and truly own a living digital companion — backed by persistent memory and Web3 identity.**
+> **ZEALWISH is a wallet-owned AI character platform.**
 >
-> **Ownership is the product.**
-
----
+> Create an original AI character, grow it through persistent memory, and prepare its identity to travel across future apps, games, creator worlds, and ownership layers.
 
 ## What is ZEALWISH?
 
-Today's AI companion market is worth millions — Character.AI has 20M monthly users, Replika has 30M downloads. Yet every platform shares the same flaw: **you don't own what you create.** Your character's personality, memories, and identity live inside a walled garden. Switch apps, and you lose everything.
+Most AI companion products give users a character to talk to, but the character usually stays inside one company database. ZEALWISH is designed around a different principle: **the character should belong to the user.**
 
-ZEALWISH introduces the missing layer: **ownership.** Your AI character's identity, memory vault, and provenance are portable, verifiable, and yours.
+ZEALWISH combines three product layers:
 
-Three pillars define the product:
+1. **AI character creation** — a cinematic flow for creating an original character with visual style, personality, voice, and origin.
+2. **Relationship memory** — conversations become a structured memory vault, so the character can develop continuity instead of resetting like a disposable chatbot.
+3. **Wallet-owned identity** — the character passport is designed to connect identity, provenance, permissions, and future portability through a Web3 ownership layer.
 
-- **Create** — A cinematic four-step ritual brings your character to life. Not a form — a moment.
-- **Grow** — Every conversation builds persistent memory. Your character remembers, evolves, and deepens over time.
-- **Own** — Character identity and memory can be minted as on-chain assets. You hold the keys.
+The current repository contains the ZEALWISH landing page under `frontend-v4/`, the React/Electron application shell, local runtime integration points, memory logic, product demos, and visual concept assets for the brand.
 
-## Key Features
+## Why it matters
 
-- **Cinematic Character Creation** — A four-step onboarding ritual: ignition → visual style → character prompt → first meeting. Designed as an experience, not a signup flow.
-- **Persistent Memory System** — Four-stage intimacy model (Stranger → Familiar → Friend → Intimate) that deepens naturally across conversations. Your character remembers what matters.
-- **Ownership Layer (Web3)** — Character identity, memory vault, and provenance tracked on-chain. Users hold the keys to their companion's existence — not a platform.
-- **Local AI Runtime (Hermes)** — The Electron desktop app runs a local AI agent, keeping conversations private and on-device by default.
-- **Dual-Mode Web App** — A standalone landing page showcases the vision; one click launches the full interactive app shell — no build step, pure CDN.
-- **Bilingual Interface** — Full English and Simplified Chinese support with instant language switching.
-- **Command Palette (⌘K)** — Fast navigation across all views: Plaza, Talk, Rewind, Record, Settings, and session management.
-- **Onboarding Ritual** — A cinematic four-step character creation ceremony. Not a form to fill out — a moment to experience.
+AI characters are becoming personal, social, and creative assets. If a character remembers a user's preferences, relationship history, creative lore, and emotional context, then the user should be able to keep that identity beyond one platform.
+
+ZEALWISH positions Web3 as infrastructure, not speculation:
+
+- **Wallet** = user-controlled account and ownership handle.
+- **Character Passport** = portable identity record for an AI character.
+- **Memory Vault** = private relationship continuity, with selective proof and export paths.
+- **Cross-world Portability** = a future path for games, agents, creator markets, and community worlds.
+
+> NFT is not the product. **Ownership is the product.**
+
+## How the product works
+
+### 1. Create your character
+
+Start from a visual signal, personality direction, and short character prompt. ZEALWISH treats character creation as an onboarding ritual rather than a plain form.
+
+### 2. Grow through conversation
+
+The character builds continuity through daily dialogue, remembered moments, preferences, emotional context, and relationship milestones.
+
+### 3. Save relationship memory
+
+Important moments can be organized into a memory vault. In the desktop runtime, the project is designed around local-first storage and runtime adapters.
+
+### 4. Own the identity
+
+The product direction is to let a wallet-linked character passport represent identity, provenance, permissions, and future portability. Production smart contract and minting flows are roadmap items, not financial functionality in the current prototype.
+
+### 5. Carry the character into future worlds
+
+ZEALWISH is designed to expand from one companion into a broader character ecosystem: creator skins, playable personalities, agent worlds, community scenes, and cross-platform identity.
 
 ## Screenshots
 
 <p align="center">
-  <img src="docs/images/hero-landing.jpg" width="48%" alt="ZEALWISH Landing Page" />
-  <img src="docs/images/create-oc.jpg" width="48%" alt="Character Creation" />
-  <img src="docs/images/chat-interface.jpg" width="48%" alt="Chat Interface" />
-  <img src="docs/images/memory-archive.jpg" width="48%" alt="Memory Archive" />
-  <img src="docs/images/ownership-market.jpg" width="48%" alt="Ownership Market" />
-  <img src="docs/images/logo-showcase.jpg" width="48%" alt="Brand Identity" />
+  <img src="docs/images/screenshot-hero.jpg" width="49%" alt="ZEALWISH landing page hero" />
+  <img src="docs/images/screenshot-web3.jpg" width="49%" alt="ZEALWISH Web3 identity section" />
+  <img src="docs/images/screenshot-flow.jpg" width="49%" alt="ZEALWISH creation and memory flow" />
+  <img src="docs/images/screenshot-ownership.jpg" width="49%" alt="ZEALWISH ownership layer" />
 </p>
 
-## Competitive Positioning
+## Concept visuals
 
-| | ZEALWISH | Character.AI | Replika | Kindroid | Nomi.ai |
-|---|---|---|---|---|---|
-| **Character Creation** | Cinematic ritual | Quick form | Avatar builder | Text prompt | Profile setup |
-| **Memory** | Persistent + staged | Session-based | Long-term | Episodic | Conversation |
-| **Ownership** | On-chain identity | Platform-locked | Platform-locked | Platform-locked | Platform-locked |
-| **Runtime** | Local-first (Hermes) | Cloud only | Cloud only | Cloud only | Cloud only |
-| **Data Privacy** | On-device by default | Server-side | Server-side | Server-side | Server-side |
-| **Open Source** | Core runtime | No | No | No | No |
+These images show the intended brand world: black-and-red interface language, original character identity, memory continuity, and wallet-owned AI character direction.
 
-**The gap is ownership.** Every competitor locks your character's identity inside their platform. ZEALWISH makes identity portable.
+<p align="center">
+  <img src="docs/images/logo-showcase.jpg" width="49%" alt="ZEALWISH brand identity concept" />
+  <img src="docs/images/memory-archive.jpg" width="49%" alt="ZEALWISH decentralized memory concept" />
+</p>
 
-## Architecture
+## Core features
 
-```
-┌──────────────────────────────────────────────────┐
-│                  ZEALWISH Desktop                 │
-│  ┌─────────────┐  ┌──────────────────────────┐   │
-│  │  Electron   │  │   Local AI Runtime       │   │
-│  │  Shell      │←→│   (Hermes Agent)         │   │
-│  │  (IPC)      │  │   - LLM inference        │   │
-│  └──────┬──────┘  │   - TTS / ASR            │   │
-│         │         │   - Image generation      │   │
-│         │         └──────────────────────────┘   │
-│  ┌──────▼──────────────────────────────────┐     │
-│  │  React 18 Frontend (Vite)               │     │
-│  │  - Character creation & management      │     │
-│  │  - Persistent memory & intimacy         │     │
-│  │  - Command palette & multi-view         │     │
-│  └─────────────────────────────────────────┘     │
-├──────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌──────────────────────────┐   │
-│  │  Web App    │  │  Ownership Layer         │   │
-│  │  (CDN)      │  │  - On-chain identity     │   │
-│  │  Landing +  │  │  - Memory vault          │   │
-│  │  App Shell  │  │  - Provenance tracking   │   │
-│  └─────────────┘  └──────────────────────────┘   │
-└──────────────────────────────────────────────────┘
-```
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Desktop Runtime | Electron 35 |
-| Frontend (Desktop) | React 18 · TypeScript 5.8 · Vite 6 |
-| Frontend (Web) | React 18 · Babel Standalone · CDN (zero build) |
-| AI Runtime | Hermes Agent (local LLM inference) |
-| Memory | Persistent JSON + episode awareness system |
-| Ownership | Web3 identity layer (planned) |
-| Testing | Playwright · Vitest |
+- **Wallet-owned AI character narrative** — clear positioning around user-owned identity, not another platform-locked chatbot.
+- **Cinematic landing page** — polished English product story for GitHub visitors, investors, judges, and collaborators.
+- **Character passport flow** — product language for wallet login, AI character creation, NFT identity, and cross-world portability.
+- **Persistent memory direction** — relationship memory is treated as the core emotional and technical spine.
+- **React + Electron application shell** — desktop-oriented architecture with local runtime integration points.
+- **ZEALWISH visual system** — black signal UI, red accent language, character artwork, and branded concept screens.
+- **Bilingual app foundation** — the app shell still contains English and Simplified Chinese runtime strings, while this GitHub homepage is written in English.
 
 ## Quick Start
 
-### Desktop App (Electron)
+### Clone and install
 
 ```bash
 git clone https://github.com/KINGKAZMAX/OCWORLD-WEB.git
 cd OCWORLD-WEB
 npm install
+```
+
+### Preview the ZEALWISH landing page
+
+The committed landing page is a zero-build browser preview in `frontend-v4/index.html`.
+
+```bash
+python3 -m http.server 8789 --bind 127.0.0.1 --directory frontend-v4
+```
+
+Open:
+
+```text
+http://127.0.0.1:8789/index.html
+```
+
+### Run the desktop development shell
+
+```bash
 npm run dev
 ```
 
-### Web Demo (frontend-v4, zero build)
+`npm run dev` prepares the Hermes local AI runtime source before starting Vite. If you only need to review the public landing page, use the zero-build `frontend-v4` preview command above.
+
+### Run tests
 
 ```bash
-cd frontend-v4
-python3 -m http.server 8080
-# Open http://localhost:8080
+npm run test
 ```
 
-The web app runs entirely client-side with CDN-loaded React. No build step, no Node.js required.
+## Repository map
 
-## FAQ
+```text
+frontend-v4/
+  index.html              # Zero-build ZEALWISH landing page and browser preview
+  src/v5/zealwish-landing.jsx
+                          # English landing page sections and product story
+  assets/                 # Character artwork
+  uploads/                # Product concept references
 
-**Q: Is ZEALWISH a game or a productivity tool?**
-Neither. ZEALWISH is an AI character platform — your companion lives at the edge of your screen, remembers your conversations, and grows with you over time.
+src/
+  App.tsx                 # React/Electron app shell entry
+  components/             # Desktop character, chat, memory, and app surfaces
 
-**Q: Why Web3? Is this a crypto project?**
-No. Web3 is the ownership infrastructure — it ensures your character's identity, memories, and provenance are portable and verifiable. You own what you create. No tokens, no speculation.
+electron/
+  main.ts                 # Electron lifecycle
+  preload.ts              # IPC bridge
+  ipc.ts                  # Runtime channel registration
 
-**Q: How is this different from Character.AI or Replika?**
-Those platforms lock your character inside their ecosystem. ZEALWISH gives you ownership — your character's identity and memory vault are yours, portable across platforms.
+docs/images/              # Compressed README screenshots and concept visuals
+oc-data/                  # Local demo data and avatars
+scripts/                  # Runtime preparation and data utilities
+tests/                    # Vitest coverage for runtime, memory, chat, and integrations
+```
 
-**Q: Is my data private?**
-Yes. The desktop app runs a local AI runtime (Hermes). Conversations stay on-device by default. The web demo uses fallback responses — no data leaves your browser.
+## Architecture
 
-**Q: What stage is the project in?**
-Active development for UCWS Singapore Hackathon 2026 (Demo Day: June 13). Core character creation, memory, and intimacy systems are functional. Web3 ownership layer is in design.
+```text
+┌────────────────────────────────────────────────────────────┐
+│                         ZEALWISH                           │
+├────────────────────────────────────────────────────────────┤
+│  Static Web Landing (frontend-v4)                          │
+│  - English product narrative                               │
+│  - Wallet-owned character positioning                       │
+│  - Screenshot and concept presentation                      │
+├────────────────────────────────────────────────────────────┤
+│  Electron Desktop Shell                                    │
+│  - IPC bridge                                               │
+│  - Local runtime adapters                                   │
+│  - Character, chat, memory, and session surfaces            │
+├────────────────────────────────────────────────────────────┤
+│  Hermes Local AI Runtime                                   │
+│  - Local agent integration path                             │
+│  - LLM / voice / image-generation extension points          │
+├────────────────────────────────────────────────────────────┤
+│  Future Ownership Layer                                    │
+│  - Wallet-linked identity                                   │
+│  - Character passport                                       │
+│  - Memory vault permissions and provenance proofs           │
+└────────────────────────────────────────────────────────────┘
+```
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, TypeScript, Vite |
+| Desktop | Electron 35 |
+| Runtime bridge | Electron IPC, preload adapter |
+| AI runtime direction | Hermes Agent integration |
+| Data | Local JSON-style demo data and memory records |
+| Testing | Vitest |
+| Visual assets | Compressed JPG/PNG README assets |
+
+## Product status
+
+ZEALWISH is an active prototype. The landing page and product narrative are ready for GitHub presentation through `frontend-v4/index.html` and this README. The desktop shell, character flow, memory concepts, and runtime integration points exist in this repository. The wallet/NFT ownership layer is currently represented as product architecture and visual concept direction; production minting, smart contracts, and marketplace transactions are roadmap items.
 
 ## Roadmap
 
-- [x] Character creation ritual (4-step cinematic onboarding)
-- [x] Persistent memory with 4-stage intimacy model
-- [x] Local AI runtime integration (Hermes)
-- [x] Bilingual interface (EN/ZH)
-- [x] Web app shell (CDN, zero-build)
-- [ ] Web3 identity minting
-- [ ] Memory vault export/import
-- [ ] Multi-platform character portability
-- [ ] Community marketplace
-
-## Community
-
-<!-- Links will be added soon -->
-- Website: _coming soon_
-- Discord: _coming soon_
-
-## Status
-
-🚧 **Active Development** — UCWS Singapore Hackathon 2026. Demo Day: June 13, 2026.
+- [x] Rebrand GitHub homepage narrative to ZEALWISH
+- [x] Add compressed README screenshots and concept visuals
+- [x] Publish the ZEALWISH landing page under `frontend-v4/index.html`
+- [x] Explain product usage and developer preview steps
+- [ ] Add production wallet connection flow
+- [ ] Add character passport contract prototype
+- [ ] Add memory vault export/import flow
+- [ ] Add deployed public demo URL
+- [ ] Add community links and contribution guide
 
 ## License
 
-Private — All rights reserved.
+Private — all rights reserved.

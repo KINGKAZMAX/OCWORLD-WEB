@@ -1,5 +1,5 @@
 {
-  "name": "oc-world",
+  "name": "zealwish",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -51,8 +51,8 @@
     "vitest": "^3.1.2"
   },
   "build": {
-    "appId": "ai.pika.ocworld",
-    "productName": "OC World",
+    "appId": "ai.zealwish.desktop",
+    "productName": "ZEALWISH",
     "asar": true,
     "directories": {
       "output": "release"
