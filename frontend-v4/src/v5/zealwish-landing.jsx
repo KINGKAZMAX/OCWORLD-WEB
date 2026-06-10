@@ -13,10 +13,10 @@ function TopBar({ onLaunchApp }) {
     <header className="topbar">
       <a className="brand" href="#top" aria-label="ZEALWISH home">ZEALWISH</a>
       <nav className="nav" aria-label="Primary navigation">
+        <a href="#app">App Console</a>
         <a href="#create">Create</a>
         <a href="#web3">Web3</a>
         <a href="#memory">Memory</a>
-        <a href="#ownership">Ownership</a>
         <a href="#worlds">Worlds</a>
       </nav>
       <button className="wallet-button edge" onClick={() => onLaunchApp('home')}>Launch App</button>
@@ -109,6 +109,65 @@ function Ticker() {
         ))}
       </div>
     </div>
+  );
+}
+
+
+function AppPortalSection({ onLaunchApp }) {
+  return (
+    <section id="app" className="section app-portal-section">
+      <div className="section-heading">
+        <div className="eyebrow mono">Live product routes</div>
+        <h2>ZEALWISH Web App Console</h2>
+        <p>
+          The landing page is now the front door to the real product. Open character creation, wallet-owned identity, chat, memory, world, rewind, and settings without leaving the ZEALWISH black-red interface language.
+        </p>
+      </div>
+      <div className="app-portal-grid">
+        <article className="app-portal-card edge">
+          <div className="code mono">HOME</div>
+          <h3 className="display">Signal Plaza</h3>
+          <p>Enter the live companion dashboard with runtime status, quick gates, and the ZEALWISH character signal.</p>
+          <button className="secondary-button edge" onClick={() => onLaunchApp('home')}>Open Home</button>
+        </article>
+        <article className="app-portal-card edge">
+          <div className="code mono">CREATE</div>
+          <h3 className="display">Character Passport</h3>
+          <p>Start the creation ritual and define the character prompt, visual base, and first wallet-owned identity seed.</p>
+          <button className="primary-button edge" onClick={() => onLaunchApp('create')}>Create Passport</button>
+        </article>
+        <article className="app-portal-card edge">
+          <div className="code mono">CHAT</div>
+          <h3 className="display">Talk</h3>
+          <p>Open the companion chat with browser-safe fallback replies and optional speech playback.</p>
+          <button className="secondary-button edge" onClick={() => onLaunchApp('chat')}>Open Talk</button>
+        </article>
+        <article className="app-portal-card edge">
+          <div className="code mono">MEMORY</div>
+          <h3 className="display">Memory Vault</h3>
+          <p>Review the structured memory layer that turns relationship history into durable character continuity.</p>
+          <button className="secondary-button edge" onClick={() => onLaunchApp('memory')}>Open Memory</button>
+        </article>
+        <article className="app-portal-card edge">
+          <div className="code mono">WORLD</div>
+          <h3 className="display">World Layer</h3>
+          <p>Preview agent-world tasks, creator routes, collaboration signals, and cross-world character movement.</p>
+          <button className="secondary-button edge" onClick={() => onLaunchApp('world')}>Open World</button>
+        </article>
+        <article className="app-portal-card edge">
+          <div className="code mono">REWIND</div>
+          <h3 className="display">Rewind</h3>
+          <p>Open the timeline of shared moments and relationship milestones that give the character continuity.</p>
+          <button className="secondary-button edge" onClick={() => onLaunchApp('rewind')}>Open Rewind</button>
+        </article>
+        <article className="app-portal-card edge">
+          <div className="code mono">SETTINGS</div>
+          <h3 className="display">Identity Settings</h3>
+          <p>Manage profile details, avatar generation, replay controls, and ZEALWISH runtime options.</p>
+          <button className="secondary-button edge" onClick={() => onLaunchApp('settings')}>Open Settings</button>
+        </article>
+      </div>
+    </section>
   );
 }
 
@@ -301,20 +360,25 @@ function FinalCTA({ onLaunchApp }) {
 }
 
 function App() {
-  const [showApp, setShowApp] = useState(false);
+  const [appIntent, setAppIntent] = useState(null);
+  const hasMountedApp = React.useRef(false);
 
   const handleLaunchApp = useCallback((intent = 'home') => {
-    setShowApp(true);
-    // After landing hides, mount the v4 app shell into a new container
-    setTimeout(() => {
-      const appContainer = document.getElementById('zealwish-app');
-      if (appContainer && typeof window.ZEALWISH_MOUNT_APP === 'function') {
-        window.ZEALWISH_MOUNT_APP(appContainer, { intent });
-      }
-    }, 100);
+    hasMountedApp.current = false;
+    setAppIntent(intent);
   }, []);
 
-  if (showApp) {
+  useEffect(() => {
+    if (!appIntent || hasMountedApp.current) return;
+    const appContainer = document.getElementById('zealwish-app');
+    const intent = appIntent;
+    if (appContainer && typeof window.ZEALWISH_MOUNT_APP === 'function') {
+      hasMountedApp.current = true;
+      window.ZEALWISH_MOUNT_APP(appContainer, { intent });
+    }
+  }, [appIntent]);
+
+  if (appIntent) {
     return (
       <div id="zealwish-app" style={{
         position: 'fixed', inset: 0, zIndex: 100,
@@ -329,6 +393,7 @@ function App() {
       <TopBar onLaunchApp={handleLaunchApp} />
       <Hero onLaunchApp={handleLaunchApp} />
       <Ticker />
+      <AppPortalSection onLaunchApp={handleLaunchApp} />
       <Web3IntroSection />
       <CreateSection />
       <MemorySection />

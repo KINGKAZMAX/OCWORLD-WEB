@@ -1,16 +1,16 @@
-// ZEALWISH v4 — OC creation ritual.
+// ZEALWISH v4 — character passport creation ritual.
 // 4-step PCB onboarding: ignite → visual style → prompt → meet.
-// Cinematic; only shown on first run, replayable from settings.
+// English-only, replayable from settings.
 
-const OC_PROMPT_EXAMPLE = '一个带红帽子的冒险少年，酷酷表情，战术护目镜，扎小马尾子，背景白色，像素风格，红色风衣，背包，随身异世界宠物根据我的形象不断的去生成不同的风格和服装，但是色系一致，不要马丁鞋，穿平底 Nike 板鞋，长筒宽松的裤子';
+const OC_PROMPT_EXAMPLE = 'An adventurous boy with a red cap, cool expression, tactical goggles, small ponytail, white background, pixel art style, red windbreaker, backpack, and a small isekai companion pet. Keep the color system consistent across style and outfit variations. No boots; flat skate sneakers and long loose wide-leg pants.';
 
 const VISUAL_STYLES = [
-  { id: 'pixel',   zh: '像素风',   en: 'Pixel Art',  glyph: '像' },
-  { id: 'anime',   zh: '二次元',   en: 'Anime',      glyph: '二' },
-  { id: 'cyber',   zh: '赛博机械', en: 'Cyber Mech', glyph: '械' },
-  { id: 'figure',  zh: '3D 手办',  en: '3D Figure',  glyph: '3D' },
-  { id: 'comic',   zh: '漫画线稿', en: 'Comic Ink',  glyph: '漫' },
-  { id: 'arcade',  zh: '复古街机', en: 'Arcade',     glyph: '机' },
+  { id: 'pixel',   en: 'Pixel Art',  glyph: 'PX' },
+  { id: 'anime',   en: 'Anime',      glyph: 'AN' },
+  { id: 'cyber',   en: 'Cyber Mech', glyph: 'CY' },
+  { id: 'figure',  en: '3D Figure',  glyph: '3D' },
+  { id: 'comic',   en: 'Comic Ink',  glyph: 'CM' },
+  { id: 'arcade',  en: 'Arcade',     glyph: 'AR' },
 ];
 
 // PCB circuit backdrop — animated traces converging to center
@@ -56,7 +56,6 @@ function PCBBackdrop({ phase = 0 }) {
 }
 
 function OnboardingRitual({ onComplete }) {
-  const { lang } = useT();
   const [step, setStep] = React.useState(0);
   const [visualStyle, setVisualStyle] = React.useState(null);
   const [ocPrompt, setOCPrompt] = React.useState(() => localStorage.getItem('ocworld.ocDescription') || OC_PROMPT_EXAMPLE);
@@ -70,8 +69,6 @@ function OnboardingRitual({ onComplete }) {
       setMatchedName(pool[Math.floor(Math.random() * pool.length)]);
     }
   }, [step, matchedName]);
-
-  const T = (zh, en) => (lang === 'en' ? en : zh);
 
   return (
     <div style={{
@@ -118,24 +115,24 @@ function OnboardingRitual({ onComplete }) {
               fontSize: 'clamp(40px, 6vw, 64px)', margin: 0, textAlign: 'center',
               color: 'var(--ink)', lineHeight: 1.1,
             }}>
-              {T('让我，住进你的世界。', 'Let me move into your world.')}
+              Let me move into your world.
             </h1>
             <p className="serif" style={{
               fontSize: 16, color: 'var(--ink-muted)', textAlign: 'center', maxWidth: 460,
               lineHeight: 1.6, fontStyle: 'italic', margin: 0,
             }}>
-              {T('一个会陪你的角色，正在被点亮。', 'A character that will keep you company is being ignited.')}
+              A character that will keep you company is being ignited.
             </p>
             <button onClick={() => setStep(1)} className="grotesk" style={ritualBtn}>
-              {T('开始 →', 'Begin →')}
+              Begin →
             </button>
           </>
         )}
 
         {step === 1 && (
           <>
-            <div className="mono" style={ritualLabel}>{T('STEP 1 · 选择风格', 'STEP 1 · STYLE BASE')}</div>
-            <h2 className="heitai" style={ritualHead}>{T('你想让 TA 以哪种视觉风格出现？', 'What visual style should they appear in?')}</h2>
+            <div className="mono" style={ritualLabel}>STEP 1 · STYLE BASE</div>
+            <h2 className="heitai" style={ritualHead}>What visual style should they appear in?</h2>
             <div style={{
               display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12,
               width: '100%',
@@ -161,7 +158,7 @@ function OnboardingRitual({ onComplete }) {
                       color: on ? '#FFFFFF' : 'var(--accent)',
                     }}>{a.glyph}</div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>{lang === 'en' ? a.en : a.zh}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>{a.en}</span>
                       <span className="mono" style={{ fontSize: 9, color: 'var(--ink-faint)', letterSpacing: '0.2em', marginTop: 2 }}>{a.id.toUpperCase()}</span>
                     </div>
                   </button>
@@ -169,10 +166,10 @@ function OnboardingRitual({ onComplete }) {
               })}
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setStep(0)} style={{ ...ritualBtnSecondary }}>{T('← 返回', '← Back')}</button>
+              <button onClick={() => setStep(0)} style={{ ...ritualBtnSecondary }}>← Back</button>
               <button onClick={() => visualStyle && setStep(2)} disabled={!visualStyle}
                 style={{ ...ritualBtn, opacity: visualStyle ? 1 : 0.4, cursor: visualStyle ? 'pointer' : 'not-allowed' }}>
-                {T('下一步 →', 'Next →')}
+                Next →
               </button>
             </div>
           </>
@@ -180,13 +177,13 @@ function OnboardingRitual({ onComplete }) {
 
         {step === 2 && (
           <>
-            <div className="mono" style={ritualLabel}>{T('STEP 2 · 输入提示词', 'STEP 2 · CHARACTER PROMPT')}</div>
-            <h2 className="heitai" style={ritualHead}>{T('直接描述你想生成的 OC。', 'Describe the OC you want to generate.')}</h2>
+            <div className="mono" style={ritualLabel}>STEP 2 · CHARACTER PROMPT</div>
+            <h2 className="heitai" style={ritualHead}>Describe the character you want to generate.</h2>
             <textarea
               value={ocPrompt}
               onChange={(e) => setOCPrompt(e.target.value)}
               className="mono"
-              placeholder={T('例如：一个带红帽子的冒险少年，酷酷表情，战术护目镜……', 'Example: an adventurous boy with a red cap, cool expression, tactical goggles...')}
+              placeholder="Example: an adventurous boy with a red cap, cool expression, tactical goggles..."
               style={{
                 width: '100%',
                 minHeight: 150,
@@ -211,14 +208,14 @@ function OnboardingRitual({ onComplete }) {
               fontSize: 9,
               letterSpacing: '0.12em',
             }}>
-              <span>{T('会作为生成 OC 的核心描述保存', 'Saved as the core OC generation prompt')}</span>
+              <span>Saved as the core character generation prompt</span>
               <span>{ocPrompt.trim().length} CHARS</span>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setStep(1)} style={ritualBtnSecondary}>{T('← 返回', '← Back')}</button>
+              <button onClick={() => setStep(1)} style={ritualBtnSecondary}>← Back</button>
               <button onClick={() => promptReady && setStep(3)} disabled={!promptReady}
                 style={{ ...ritualBtn, opacity: promptReady ? 1 : 0.4, cursor: promptReady ? 'pointer' : 'not-allowed' }}>
-                {T('召唤角色 →', 'Summon →')}
+                Summon →
               </button>
             </div>
           </>
@@ -226,24 +223,23 @@ function OnboardingRitual({ onComplete }) {
 
         {step === 3 && (
           <>
-            <div className="mono" style={ritualLabel}>{T('STEP 3 · 数字生命相遇', 'STEP 3 · MEETING POINT')}</div>
+            <div className="mono" style={ritualLabel}>STEP 3 · MEETING POINT</div>
             <div style={{ animation: 'fade-in .8s ease-out' }}>
               <ResidentOC size={160} blush={true} mood="shy" name={matchedName} />
             </div>
             <h2 className="heitai" style={{ ...ritualHead, fontSize: 28 }}>
-              {T(`你好，我是 ${matchedName}。`, `Hi, I'm ${matchedName}.`)}
+              {`Hi, I'm ${matchedName}.`}
             </h2>
             <p className="serif" style={{
               fontSize: 15, color: 'var(--ink-muted)', textAlign: 'center', maxWidth: 460,
               lineHeight: 1.7, fontStyle: 'italic', margin: 0,
             }}>
-              {T('从今天起，我住在你桌面的角落。\n不打扰你，但我会一直在。',
-                  "Starting today, I live in the corner of your desktop.\nI won't get in your way — but I'll be here.")}
+              Starting today, I live in the corner of your desktop.<br />I won't get in your way — but I'll be here.
             </p>
             <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-              <button onClick={() => { setMatchedName(''); setStep(2); }} style={ritualBtnSecondary}>{T('再选一个', 'Try another')}</button>
+              <button onClick={() => { setMatchedName(''); setStep(2); }} style={ritualBtnSecondary}>Try another</button>
               <button onClick={() => onComplete({ name: matchedName, visualStyle, ocDescription: ocPrompt.trim() || OC_PROMPT_EXAMPLE })} style={ritualBtn}>
-                {T('就是你了 →', "It's you →")}
+                It's you →
               </button>
             </div>
           </>

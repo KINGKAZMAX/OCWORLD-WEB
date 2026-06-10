@@ -1,5 +1,5 @@
-// ZEALWISH v3 — top-level wiring.
-// Glass shell + light/dark gradient + EN/中 toggle + simplified anchors.
+// ZEALWISH v4 — top-level wiring.
+// Black-red app shell, English-only product flow, direct module intents.
 
 const { useState, useEffect, useCallback } = React;
 
@@ -50,37 +50,39 @@ function GlassShell({ children }) {
     <div data-zealwish-app-shell="true" style={{
       width: '100%', height: '100%',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 20, boxSizing: 'border-box',
+      padding: 'clamp(14px, 2vw, 26px)', boxSizing: 'border-box',
       position: 'relative',
+      background:
+        'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px), radial-gradient(circle at 78% 18%, rgba(255,45,45,0.20), transparent 34%), #0A0A0A',
+      backgroundSize: '36px 36px, 36px 36px, auto, auto',
     }}>
-      <div className="glass-strong" style={{
-        width: 'min(1320px, 100%)',
-        height: 'min(840px, 100%)',
-        borderRadius: 0,
+      <div className="edge red-line" style={{
+        width: 'min(1380px, 100%)',
+        height: 'min(880px, 100%)',
         overflow: 'hidden',
-        boxShadow: 'var(--shadow-window), 0 0 0 1px var(--glass-border-strong)',
+        boxShadow: '0 28px 80px rgba(0,0,0,0.64), 0 0 0 1px rgba(255,45,45,0.36), 0 0 80px rgba(255,45,45,0.12)',
         display: 'flex', flexDirection: 'column',
         position: 'relative',
+        background: 'rgba(10,10,10,0.94)',
       }}>
-        {/* Title bar — industrial chrome */}
         <div style={{
-          height: 38, flexShrink: 0,
+          height: 44, flexShrink: 0,
           display: 'flex', alignItems: 'center', padding: '0 16px',
           position: 'relative',
-          borderBottom: '1px solid var(--accent)',
-          background: 'linear-gradient(90deg, rgba(255,45,85,0.16), rgba(10,10,10,0.96) 28%, rgba(255,255,255,0.06) 50%, rgba(10,10,10,0.96) 72%, rgba(255,45,85,0.16))',
+          borderBottom: '1px solid var(--line-red)',
+          background: 'linear-gradient(90deg, rgba(255,45,45,0.22), rgba(10,10,10,0.98) 28%, rgba(255,255,255,0.05) 50%, rgba(10,10,10,0.98) 72%, rgba(255,45,45,0.18))',
         }}>
           <div style={{ display: 'flex', gap: 7 }}>
-            <span style={{ width: 11, height: 11, borderRadius: 0, background: 'var(--accent)', border: '1px solid var(--accent)' }} />
+            <span style={{ width: 11, height: 11, borderRadius: 0, background: 'var(--red)', border: '1px solid var(--red)' }} />
             <span style={{ width: 11, height: 11, borderRadius: 0, background: 'transparent', border: '1px solid rgba(255,255,255,.65)' }} />
             <span style={{ width: 11, height: 11, borderRadius: 0, background: '#FFFFFF', border: '1px solid #FFFFFF' }} />
           </div>
           <div className="mono" style={{
             position: 'absolute', left: 0, right: 0, textAlign: 'center',
-            fontSize: 10.5, color: 'var(--ink-muted)',
-            letterSpacing: '0.22em', pointerEvents: 'none', fontWeight: 500,
+            fontSize: 10.5, color: 'var(--muted)',
+            letterSpacing: '0.24em', pointerEvents: 'none', fontWeight: 800,
           }}>
-            ZEALWISH
+            ZEALWISH WEB APP
           </div>
         </div>
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
@@ -93,20 +95,21 @@ function GlassShell({ children }) {
 
 function AppV3({ initialIntent = 'home' } = {}) {
   const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS_V3);
-  // first-run onboarding ritual
-  const [showOnboarding, setShowOnboarding] = useState(() => initialIntent === 'create' || !localStorage.getItem('ocworld.oc'));
+  const validInitialViews = ['home', 'chat', 'world', 'rewind', 'memory', 'settings'];
+  const initialView = validInitialViews.includes(initialIntent) ? initialIntent : 'home';
+  const [showOnboarding, setShowOnboarding] = useState(() => initialIntent === 'create');
   const [oc, setOC] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ocworld.oc') || 'null') || { name: 'XZ' }; }
     catch { return { name: 'XZ' }; }
   });
-  const [splashState, setSplashState] = useState(() => (initialIntent === 'create' || !localStorage.getItem('ocworld.oc')) ? 'off' : 'on');
-  const [active, setActive] = useState(() => initialIntent === 'chat' ? 'chat' : 'home');
+  const [splashState, setSplashState] = useState(() => 'off');
+  const [active, setActive] = useState(() => initialView);
   const [collapsed, setCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const intim = useIntimacy();
 
-  // language + theme — persisted
-  const [lang, setLangState] = useState(() => localStorage.getItem('ocworld.lang') || 'en');
+  // English-only product UI + persisted theme
+  const [lang] = useState('en');
   const [theme, setThemeState] = useState(() => localStorage.getItem('ocworld.theme') || 'dark');
   const [ttsEnabled, setTtsEnabled] = useState(() => localStorage.getItem('ocworld.ttsEnabled') !== '0');
   const [runtimeInfo, setRuntimeInfo] = useState(() => ({
@@ -117,7 +120,7 @@ function AppV3({ initialIntent = 'home' } = {}) {
   const [ocDescription, setOCDescriptionState] = useState(() => localStorage.getItem('ocworld.ocDescription') || DEFAULT_OC_DESCRIPTION);
   const [isGeneratingAvatar, setIsGeneratingAvatar] = useState(false);
 
-  const setLang = (v) => { setLangState(v); localStorage.setItem('ocworld.lang', v); };
+  const setLang = () => {};
   const setTheme = (v) => { setThemeState(v); localStorage.setItem('ocworld.theme', v); };
   const setOCDescription = (v) => { setOCDescriptionState(v); localStorage.setItem('ocworld.ocDescription', v); };
   const setOCProfile = useCallback((patch) => {
@@ -132,9 +135,9 @@ function AppV3({ initialIntent = 'home' } = {}) {
   useEffect(() => { localStorage.setItem('ocworld.ttsEnabled', ttsEnabled ? '1' : '0'); }, [ttsEnabled]);
 
   const t = useCallback((key) => {
-    const dict = I18N[lang] || I18N.zh;
-    return dict[key] !== undefined ? dict[key] : (I18N.zh[key] !== undefined ? I18N.zh[key] : key);
-  }, [lang]);
+    const dict = I18N.en || {};
+    return dict[key] !== undefined ? dict[key] : key;
+  }, []);
 
   useEffect(() => {
     const runtime = window.OCRuntime;
@@ -284,14 +287,6 @@ function AppV3({ initialIntent = 'home' } = {}) {
   }, [activeSessionId, active, sessions, lang, ttsEnabled]);
 
   const handleQuickStart = (kind) => {
-    const seedZh = {
-      'Read Me':       '把我最近的对话和兴趣，整理成你眼中的我。',
-      'Insights':      '这周我的注意力都流向了哪里？',
-      'Plan':          '基于我现在的状态，先处理哪件事比较好？',
-      'Unblock':       '现在卡住我的那一步，是什么？下一步呢？',
-      'Daily Report':  '替我给今天写一段简短真诚的总结。',
-      'Snapshot':      '此刻你看见的我，是什么样子？',
-    };
     const seedEn = {
       'Read Me':       'Turn my recent chats and interests into a portrait of me, in your eyes.',
       'Insights':      'Where did my attention flow this week?',
@@ -300,15 +295,14 @@ function AppV3({ initialIntent = 'home' } = {}) {
       'Daily Report':  'Write me a short, honest summary of today.',
       'Snapshot':      'How do I look right now, in your eyes?',
     };
-    const seed = (lang === 'en' ? seedEn : seedZh)[kind] || kind;
-    sendInSession(seed);
+    sendInSession(seedEn[kind] || kind);
   };
 
   const newSession = () => {
     const id = 'n' + Date.now();
     setSessions(prev => ({
       ...prev,
-      [id]: { id, title: lang === 'en' ? 'New chat' : '新对话', date: lang === 'en' ? 'now' : '现在', preview: '', messages: [] },
+      [id]: { id, title: 'New chat', date: 'now', preview: '', messages: [] },
     }));
     setActiveSessionId(id);
     setActive('chat');
@@ -395,32 +389,30 @@ function AppV3({ initialIntent = 'home' } = {}) {
           onPickSession={(id) => { setActiveSessionId(id); setActive('chat'); }}
         />
 
-        {/* Top-right floating control: language + theme */}
-        <TopBar lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} />
+        {/* Top-right floating control: theme only */}
+        <AppTopBar theme={theme} setTheme={setTheme} />
 
         <TweaksPanel title="Tweaks">
-          <TweakSection label={lang === 'en' ? 'Character' : '角色'}>
-            <TweakToggle label={lang === 'en' ? 'Blush when idle' : '空闲时露出腮红'}
+          <TweakSection label="Character">
+            <TweakToggle label="Blush when idle"
               value={tweaks.blushOnIdle}
               onChange={(v) => setTweak('blushOnIdle', v)} />
           </TweakSection>
-          <TweakSection label={lang === 'en' ? 'Interface' : '界面'}>
-            <TweakButton label={lang === 'en' ? 'Palette locked · #FF2D55' : '信号红锁定 · #FF2D55'} onClick={() => {}} />
-            <TweakRadio label={lang === 'en' ? 'Ambient density' : '环境氛围密度'}
+          <TweakSection label="Interface">
+            <TweakButton label="Palette locked · #FF2D55" onClick={() => {}} />
+            <TweakRadio label="Ambient density"
               value={tweaks.ambientDensity}
-              options={lang === 'en'
-                ? [['quiet', 'Quiet'], ['medium', 'Medium'], ['busy', 'Busy']]
-                : [['quiet', '安静'], ['medium', '适中'], ['busy', '热闹']]}
+              options={[['quiet', 'Quiet'], ['medium', 'Medium'], ['busy', 'Busy']]}
               onChange={(v) => setTweak('ambientDensity', v)} />
           </TweakSection>
-          <TweakSection label={lang === 'en' ? 'Demo' : '演示'}>
-            <TweakButton label={lang === 'en' ? 'Replay opening' : '重新播放欢迎画面'} onClick={() => { setSplashState('on'); }} />
+          <TweakSection label="Demo">
+            <TweakButton label="Replay opening" onClick={() => { setSplashState('on'); }} />
             <TweakButton label={t('onboard.replay')} onClick={() => { localStorage.removeItem('ocworld.oc'); setShowOnboarding(true); }} />
-            <TweakButton label={lang === 'en' ? 'Open ⌘K palette' : '打开 ⌘K 命令面板'} onClick={() => setPaletteOpen(true)} />
-            <TweakToggle label={lang === 'en' ? 'Speak replies' : '自动朗读回复'}
+            <TweakButton label="Open command palette" onClick={() => setPaletteOpen(true)} />
+            <TweakToggle label="Speak replies"
               value={ttsEnabled}
               onChange={setTtsEnabled} />
-            <TweakButton label={isGeneratingAvatar ? (lang === 'en' ? 'Generating portrait...' : '正在生成头像...') : (lang === 'en' ? 'Generate OC portrait' : '生成 OC 头像')}
+            <TweakButton label={isGeneratingAvatar ? 'Generating portrait...' : 'Generate character portrait'}
               onClick={handleGenerateAvatar} />
           </TweakSection>
         </TweaksPanel>
@@ -434,47 +426,29 @@ function nowTime() {
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 }
 
-function pickFallback(text, lang) {
+function pickFallback(text) {
   const t = text.toLowerCase();
-  if (lang === 'en') {
-    if (t.length < 4) return 'mm, listening.';
-    if (t.includes('tired') || t.includes('sleep')) return "Then take a small break. I'll stay here.";
-    if (t.includes('plan')) return 'Pick the smallest one — not the most important, the easiest to start.';
-    return "Noted, quietly. Want me to help sort this out?";
-  }
-  if (t.length < 4) return '嗯，我在听。';
-  if (t.includes('累') || t.includes('困')) return '那就先停一会儿吧。我陪你一会儿。';
-  if (t.includes('计划') || t.includes('plan')) return '先选一件最小的事——不是最重要的，是最容易开始的那个。';
-  return '我把这件事悄悄记下了。要不要我先帮你整理一下？';
+  if (t.length < 4) return 'mm, listening.';
+  if (t.includes('tired') || t.includes('sleep')) return "Then take a small break. I'll stay here.";
+  if (t.includes('plan')) return 'Pick the smallest one — not the most important, the easiest to start.';
+  return "Noted, quietly. Want me to help sort this out?";
 }
 
 function buildAvatarPrompt(oc, lang, description) {
   const name = oc?.name || 'XZ';
   const personality = oc?.personality || '';
-  const personalityLine = personality
-    ? (lang === 'en' ? `Character personality: ${personality}\n` : `角色性格：${personality}\n`)
-    : '';
+  const personalityLine = personality ? `Character personality: ${personality}\n` : '';
   const styleId = OC_STYLE_LABELS[oc?.visualStyle] ? oc.visualStyle : (OC_STYLE_LABELS[oc?.archetype] ? oc.archetype : 'pixel');
-  const visualStyle = OC_STYLE_LABELS[styleId][lang === 'en' ? 'en' : 'zh'];
+  const visualStyle = OC_STYLE_LABELS[styleId].en;
   const core = description || DEFAULT_OC_DESCRIPTION;
-  if (lang === 'en') {
-    return `Create a 16:9 full-body original character concept image for ZEALWISH.
+  return `Create a 16:9 full-body original character concept image for ZEALWISH.
 Character name: ${name}
 ${personalityLine}Selected visual style: ${visualStyle}
 User one-line description: ${core}
 
 Follow the user's description as the primary source of truth. Use the selected visual style as the baseline unless the one-line description specifies a stronger style. Preserve the character's core silhouette, color palette, attitude, and recognizable details across generations. You may vary the outfit layers, styling, accessories, and fashion direction each time, but keep the overall color system consistent.
 
-Hard constraints: white background, full body visible, cool expression, follow the selected visual style and any style words in the user description, red cap or red headwear if mentioned, tactical goggles if mentioned, ponytail if mentioned, red coat/windbreaker if mentioned, backpack if mentioned, small isekai companion pet if mentioned. Do not use Martin boots, combat boots, or chunky boots. The character must wear flat Nike-inspired skate sneakers with no visible logo or branding, plus long loose wide-leg pants. No text, no watermark, no UI, no logo.`;
-  }
-  return `为 ZEALWISH 生成一张 16:9 的原创 OC 全身角色概念图。
-角色名：${name}
-${personalityLine}用户选择的视觉基底：${visualStyle}
-用户一句话描述：${core}
-
-以用户描述为最高优先级；除非一句话描述里指定了更强的风格，否则以用户选择的视觉基底作为生成风格基准。保留角色核心轮廓、色系、气质和可识别特征。每次生成可以变化服装层次、风格方向、配件和外套细节，但整体色系统一，像同一个角色在不同造型里的延展。
-
-硬性要求：白色背景，全身可见，酷酷表情；视觉风格遵循用户选择的视觉基底和一句话描述中的风格词；如果描述中出现红帽子、战术护目镜、小马尾、红色风衣、背包、随身异世界宠物，都必须体现。不要马丁鞋，不要战斗靴，不要厚底靴；必须穿平底 Nike 风格板鞋，但不要出现可见 logo 或品牌文字；裤子是长筒、宽松、宽腿。不要文字，不要水印，不要 UI，不要 logo。`;
+Hard constraints: white background, full body visible, cool expression, follow the selected visual style and any style words in the user description, red cap or red headwear if mentioned, tactical goggles if mentioned, ponytail if mentioned, red coat/windbreaker if mentioned, backpack if mentioned, small isekai companion pet if mentioned. Do not use Martin boots, combat boots, or chunky boots. The character must wear flat skate sneakers with no visible logo or branding, plus long loose wide-leg pants. No text, no watermark, no UI, no logo.`;
 }
 
 function ResidentOCv2({ blush }) {
@@ -497,7 +471,7 @@ function ResidentOCv2({ blush }) {
           color: 'var(--ink-on-glass)', fontSize: 12, lineHeight: 1.4, maxWidth: 220,
           animation: 'fade-in .25s ease-out',
         }}>
-          {lang === 'en' ? "I'm here, not in your way." : '我在这儿，不打扰你。'}
+          I'm here, not in your way.
         </div>
       )}
       <div style={{ filter: hovered ? 'none' : 'grayscale(0.15)', transition: 'filter .3s' }}>

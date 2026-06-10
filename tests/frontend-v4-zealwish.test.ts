@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 
 const root = process.cwd();
+const rootIndexPath = join(root, "index.html");
 const indexPath = join(root, "frontend-v4", "index.html");
 const landingPath = join(root, "frontend-v4", "src", "v5", "zealwish-landing.jsx");
 const v4AppPath = join(root, "frontend-v4", "src", "v4", "app.jsx");
@@ -13,12 +14,24 @@ const chinesePattern = /[\u4e00-\u9fff]/;
 const expectedMainCharacterHash = "c8b5166f56b2fbb5e58999cea670732a5e6516f8b9a4b2f07aa1ae6ffe11cf4c";
 
 describe("frontend-v4 ZEALWISH Web3 landing", () => {
+  it("keeps the Vite/root entry branded as ZEALWISH English-only", () => {
+    const rootIndex = readFileSync(rootIndexPath, "utf8");
+
+    expect(rootIndex).toContain('lang="en"');
+    expect(rootIndex).toContain("ZEALWISH");
+    expect(rootIndex).not.toContain("OC World");
+    expect(rootIndex).not.toContain("OCWORLD");
+    expect(rootIndex).not.toContain("EcomCanvas");
+    expect(rootIndex).not.toMatch(chinesePattern);
+  });
+
   it("routes the active preview to the ZEALWISH v5 landing entry", () => {
     const index = readFileSync(indexPath, "utf8");
 
     expect(index).toContain("ZEALWISH");
     expect(index).toContain("src/v5/zealwish-landing.jsx");
     expect(index).toContain("V4 app shell components");
+    expect(index).toContain('src="tweaks-panel.jsx"');
     expect(index).not.toContain("OCWORLD");
     expect(index).not.toMatch(chinesePattern);
   });
@@ -39,20 +52,26 @@ describe("frontend-v4 ZEALWISH Web3 landing", () => {
     expect(landing).not.toMatch(chinesePattern);
   });
 
-  it("passes explicit launch intents from the landing page into the web app", () => {
+  it("passes explicit launch intents from the landing page into every core web app module", () => {
     const landing = readFileSync(landingPath, "utf8");
 
-    expect(landing).toContain("onLaunchApp('home')");
-    expect(landing).toContain("onLaunchApp('create')");
+    for (const intent of ["home", "create", "chat", "world", "memory", "rewind", "settings"]) {
+      expect(landing).toContain(`onLaunchApp('${intent}')`);
+    }
+    expect(landing).toContain("function AppPortalSection({ onLaunchApp })");
+    expect(landing).toContain("ZEALWISH Web App Console");
     expect(landing).toContain("window.ZEALWISH_MOUNT_APP(appContainer, { intent })");
   });
 
-  it("mounts the actual ZEALWISH web app shell with home/create entry modes", () => {
+  it("mounts the actual ZEALWISH web app shell with direct module entry modes", () => {
     const app = readFileSync(v4AppPath, "utf8");
 
     expect(app).toContain("function AppV3({ initialIntent = 'home' } = {})");
     expect(app).toContain("initialIntent === 'create'");
+    expect(app).toContain("const validInitialViews = ['home', 'chat', 'world', 'rewind', 'memory', 'settings']");
+    expect(app).toContain("validInitialViews.includes(initialIntent) ? initialIntent : 'home'");
     expect(app).toContain('data-zealwish-app-shell="true"');
+    expect(app).toContain("ZEALWISH WEB APP");
     expect(app).toContain("window.ZEALWISH_MOUNT_APP = function(container, options = {})");
     expect(app).toContain("<AppV3 initialIntent={intent} />");
   });

@@ -47,12 +47,12 @@ function runtimeLabels(info, lang) {
 }
 
 const OC_STYLE_OPTIONS = [
-  { id: 'pixel',   zh: '像素风',   en: 'Pixel Art',  glyph: '像' },
-  { id: 'anime',   zh: '二次元',   en: 'Anime',      glyph: '二' },
-  { id: 'cyber',   zh: '赛博机械', en: 'Cyber Mech', glyph: '械' },
-  { id: 'figure',  zh: '3D 手办',  en: '3D Figure',  glyph: '3D' },
-  { id: 'comic',   zh: '漫画线稿', en: 'Comic Ink',  glyph: '漫' },
-  { id: 'arcade',  zh: '复古街机', en: 'Arcade',     glyph: '机' },
+  { id: 'pixel',   en: 'Pixel Art',  glyph: 'PX' },
+  { id: 'anime',   en: 'Anime',      glyph: 'AN' },
+  { id: 'cyber',   en: 'Cyber Mech', glyph: 'CY' },
+  { id: 'figure',  en: '3D Figure',  glyph: '3D' },
+  { id: 'comic',   en: 'Comic Ink',  glyph: 'CM' },
+  { id: 'arcade',  en: 'Arcade',     glyph: 'AR' },
 ];
 
 function PlazaViewV2({ onSendTask, onPickQuickStart, onNav, runtimeInfo, avatarDataUrl }) {
@@ -166,10 +166,8 @@ function PlazaViewV2({ onSendTask, onPickQuickStart, onNav, runtimeInfo, avatarD
 function OCGeneratorPanel({ description, setDescription, preview, onGenerate, isGenerating, error, compact = false }) {
   const { lang } = useT();
   const [focused, setFocused] = React.useState(false);
-  const title = lang === 'en' ? 'One-line OC generator' : '一句话生成 OC';
-  const placeholder = lang === 'en'
-    ? 'Red-capped adventure boy, tactical goggles, ponytail, pixel style, red coat, backpack...'
-    : '一个带红帽子的冒险少年，酷酷表情，战术护目镜，扎小马尾子，背景白色，像素风格，红色风衣，背包...';
+  const title = 'One-line character generator';
+  const placeholder = 'Red-capped adventure boy, tactical goggles, ponytail, pixel style, red coat, backpack...';
 
   return (
     <div className="glass-soft" style={{
@@ -229,7 +227,7 @@ function OCGeneratorPanel({ description, setDescription, preview, onGenerate, is
               minWidth: 112,
             }}
           >
-            {isGenerating ? (lang === 'en' ? 'Generating' : '生成中') : (lang === 'en' ? 'Generate OC' : '生成 OC')}
+            {isGenerating ? 'Generating' : 'Generate character'}
           </button>
           <span className="mono" style={{ fontSize: 10, color: 'var(--ink-faint)', letterSpacing: '0.14em' }}>
             MARSWAVE · GPT-IMAGE-2 · 16:9 · 2K
@@ -287,9 +285,7 @@ function OCOptionsPanel({
   const styleName = OC_STYLE_OPTIONS.find(s => s.id === selectedStyle);
   const title = lang === 'en' ? 'OC Options' : 'OC 选项';
   const subtitle = lang === 'en' ? 'Style tags · prompt · image generation · final OC' : '风格标签 · 提示词 · 生图 · 当前 OC';
-  const placeholder = lang === 'en'
-    ? 'Red-capped adventure boy, tactical goggles, ponytail, pixel style, red coat, backpack, companion pet...'
-    : '一个带红帽子的冒险少年，酷酷表情，战术护目镜，扎小马尾子，背景白色，像素风格，红色风衣，背包，随身异世界宠物...';
+  const placeholder = 'Red-capped adventure boy, tactical goggles, ponytail, pixel style, red coat, backpack, companion pet...';
 
   // 抠图并替换原图为透明 PNG
   const [previewUrl, setPreviewUrl] = React.useState(preview);
@@ -446,7 +442,7 @@ function OCOptionsPanel({
               <button
                 onClick={makeTransparentAndReplace}
                 disabled={saving}
-                title={lang === 'en' ? 'Save transparent PNG' : '保存透明 PNG'}
+                title='Save transparent PNG'
                 style={{
                   position: 'absolute',
                   bottom: 8,
@@ -475,10 +471,10 @@ function OCOptionsPanel({
 
           <div style={{ minWidth: 0 }}>
             <div className="mono" style={{ fontSize: 10, color: 'var(--ink-muted)', letterSpacing: '0.2em', marginBottom: 8 }}>
-              {lang === 'en' ? 'CURRENT OC' : '当前 OC'}
+              CURRENT CHARACTER
             </div>
             <h3 className="heitai" style={{ margin: 0, fontSize: 25, color: 'var(--ink)', lineHeight: 1.2 }}>
-              {lang === 'en' ? `Hi, I'm ${name}.` : `你好，我是 ${name}。`}
+              {`Hi, I'm ${name}.`}
             </h3>
             <p className="serif" style={{
               fontSize: 14,
@@ -487,9 +483,7 @@ function OCOptionsPanel({
               fontStyle: 'italic',
               margin: '10px 0 16px',
             }}>
-              {lang === 'en'
-                ? "Starting today, I live in the corner of your desktop. I won't get in your way, but I'll be here."
-                : '从今天起，我住在你桌面的角落。不打扰你，但我会一直在。'}
+              Starting today, I live in the corner of your desktop. I won't get in your way, but I'll be here.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
               {OC_STYLE_OPTIONS.map(style => {
@@ -516,7 +510,7 @@ function OCOptionsPanel({
                       color: on ? '#FFFFFF' : 'var(--accent)',
                       fontSize: style.id === 'figure' ? 12 : 15,
                     }}>{style.glyph}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700 }}>{lang === 'en' ? style.en : style.zh}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700 }}>{style.en}</span>
                   </button>
                 );
               })}
@@ -568,20 +562,20 @@ function OCOptionsPanel({
                 minWidth: 92,
               }}
             >
-              {isGenerating ? (lang === 'en' ? 'Generating' : '生图中') : (lang === 'en' ? 'Generate' : '生图')}
+              {isGenerating ? 'Generating' : 'Generate'}
             </button>
             <button onClick={pickAnother} style={{ ...ocOptionSecondaryButton }}>
-              {lang === 'en' ? 'Try another name' : '再选一个'}
+              Try another name
             </button>
             <button onClick={() => { setConfirmed(true); setOCProfile?.({ name, visualStyle: selectedStyle }); }} style={{ ...ocOptionPrimaryButton }}>
-              {lang === 'en' ? "It's you" : '就是你了 →'}
+              It's you
             </button>
             <button onClick={onReplayOnboarding} style={{ ...ocOptionSecondaryButton, marginLeft: 'auto' }}>
-              {lang === 'en' ? 'Full reset' : '重新走创建流程'}
+              Full reset
             </button>
           </div>
           <div className="mono" style={{ marginTop: 10, minHeight: 16, fontSize: 10, color: error ? 'var(--accent)' : 'var(--ink-faint)', letterSpacing: '0.12em' }}>
-            {error || (confirmed ? (lang === 'en' ? 'OC#0001 CONFIRMED' : 'OC#0001 已确认') : 'MARSWAVE · GPT-IMAGE-2 · 16:9 · 2K')}
+            {error || (confirmed ? 'CHARACTER #0001 CONFIRMED' : 'MARSWAVE · GPT-IMAGE-2 · 16:9 · 2K')}
           </div>
         </div>
       </div>
@@ -1003,14 +997,14 @@ function SettingsViewV2({
             <input defaultValue="XZ" style={settingsInput} />
           </SettingsRow>
           <SettingsRow label={t('settings.callme')} hint={t('settings.callme.hint')}>
-            <input defaultValue={lang === 'en' ? 'kiddo' : '小伙伴'} style={settingsInput} />
+            <input defaultValue="kiddo" style={settingsInput} />
           </SettingsRow>
-          <SettingsRow label={lang === 'en' ? 'Idle blush' : '空闲腮红'} hint={lang === 'en' ? 'a touch of shy when quiet' : '安静时露出一点害羞'}>
+          <SettingsRow label="Idle blush" hint="a touch of shy when quiet">
             <SettingsToggle value={tweaks.blushOnIdle} onChange={(v) => setTweak('blushOnIdle', v)} />
           </SettingsRow>
         </SettingsSection>
 
-        <SettingsStandaloneSection title={lang === 'en' ? 'OC Options' : 'OC 选项'}>
+        <SettingsStandaloneSection title="Character Options">
           <OCOptionsPanel
             oc={oc}
             setOCProfile={setOCProfile}

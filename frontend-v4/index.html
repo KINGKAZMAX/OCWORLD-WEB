@@ -495,6 +495,49 @@
     font-size: 14px;
     line-height: 1.58;
   }
+
+  .app-portal-section { padding-top: clamp(42px, 6vw, 84px); }
+  .app-portal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(180px, 1fr));
+    gap: 1px;
+    border: 1px solid var(--line-red);
+    background: var(--line-red);
+    overflow-x: auto;
+  }
+  .app-portal-card {
+    min-height: 330px;
+    padding: 24px;
+    background:
+      linear-gradient(180deg, rgba(255,45,45,0.10), transparent 34%),
+      rgba(10,10,10,0.95);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .app-portal-card .code {
+    color: var(--red);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+  }
+  .app-portal-card h3 {
+    margin: 24px 0 10px;
+    font-size: clamp(25px, 3vw, 38px);
+    line-height: 0.92;
+  }
+  .app-portal-card p {
+    margin: 0 0 22px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.58;
+  }
+  .app-portal-card .primary-button,
+  .app-portal-card .secondary-button {
+    width: 100%;
+    min-height: 42px;
+    font-size: 11px;
+  }
+
   .flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
   .step {
     padding: 22px;
@@ -655,7 +698,7 @@
     .nav { display: none; }
     .hero, .ownership, .market-grid, .thesis-panel { grid-template-columns: 1fr; }
     .hero { padding-top: 118px; }
-    .signal-strip, .feature-grid, .flow, .web3-rail, .thesis-grid { grid-template-columns: 1fr; }
+    .signal-strip, .feature-grid, .flow, .web3-rail, .thesis-grid, .app-portal-grid { grid-template-columns: 1fr; }
     .signal-strip div { border-right: 0; border-bottom: 1px solid var(--line-red); }
     .signal-strip div:last-child { border-bottom: 0; }
     .rail-node:not(:last-child)::after { display: none; }
@@ -726,6 +769,7 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
 
 <!-- V4 app shell components (define globals, do NOT auto-render) -->
+<script type="text/babel" src="tweaks-panel.jsx"></script>
 <script type="text/babel" src="src/v4/ocworld-bridge.jsx"></script>
 <script type="text/babel" src="src/v4/i18n.jsx"></script>
 <script type="text/babel" src="src/v4/icons.jsx"></script>
