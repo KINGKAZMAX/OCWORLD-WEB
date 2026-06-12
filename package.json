@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev": "npm run prepare:hermes-source && vite",
-    "build": "tsc --noEmit && vite build",
+    "build:web": "node scripts/build-zealwish-web-app.mjs",
+    "build": "npm run build:web && tsc --noEmit && vite build",
     "prepare:hermes-source": "node scripts/ensure-hermes-agent.mjs",
     "build:cli": "tsc -p tsconfig.cli.json",
     "prepare:hermes-runtime": "node scripts/prepare-hermes-runtime.mjs",

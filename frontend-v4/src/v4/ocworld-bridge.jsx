@@ -177,12 +177,12 @@
     };
   }
 
-  async function synthesizeAndPlay(text) {
+  async function synthesizeAndPlay(text, gender) {
     const api = electronApi();
     if (!text?.trim()) return { provider: "none", played: false };
 
     try {
-      const result = await postHttpApi("/speak", { text }, 45000);
+      const result = await postHttpApi("/speak", { text, gender }, 45000);
       const dataUrl = `data:${result.mimeType};base64,${result.audioBase64}`;
       await playAudioDataUrl(dataUrl);
       return { ...result, provider: result.provider || "http-api", played: true };
@@ -309,9 +309,12 @@
   };
 
   window.ZEALWISH_API = {
+    ...(window.ZEALWISH_API || {}),
     resolveApiBase,
     getHttpApi,
     postHttpApi,
+    speak: synthesizeAndPlay,
+    cancelSpeech,
   };
 
   window.claude = window.claude || {};

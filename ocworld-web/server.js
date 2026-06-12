@@ -37,7 +37,7 @@ const VISION_API_KEY = process.env.VISION_API_KEY;
 const VISION_BASE_URL = process.env.VISION_BASE_URL || 'https://api.bltcy.ai/v1';
 const VISION_MODEL = process.env.VISION_MODEL || 'gpt-5.5-2026-04-23';
 
-const CHAT_API_KEY = process.env.CHAT_API_KEY || 'sk-x2jKQ1ozeSp1kwwZTAL7zZaAkwr2gz437edo3Ewasv0kOT1D';
+const CHAT_API_KEY = process.env.CHAT_API_KEY;
 const CHAT_BASE_URL = process.env.CHAT_BASE_URL || 'https://api.tutorial.clouddreamai.com';
 const CHAT_MODEL = process.env.CHAT_MODEL || 'auto-v2';
 
@@ -46,6 +46,16 @@ const TTS_ENDPOINT = process.env.STEPFUN_TTS_ENDPOINT || 'https://api.stepfun.co
 const TTS_MODEL = process.env.STEPFUN_TTS_MODEL || 'stepaudio-2.5-tts';
 const TTS_VOICE_MALE = 'cixingnansheng';
 const TTS_VOICE_FEMALE = 'tianmeinvsheng';
+
+
+function fallbackChatReply(messages = []) {
+  const last = [...messages].reverse().find((message) => message?.role === 'user')?.content || '';
+  const text = String(last).toLowerCase();
+  if (text.includes('memory') || text.includes('remember')) return 'I saved the signal and can carry it into the next step.';
+  if (text.includes('plan') || text.includes('next')) return 'Pick the smallest next step first. I will keep the passport context ready.';
+  if (text.includes('tired') || text.includes('sleep')) return 'Take the quieter route for now. I will stay available without demanding attention.';
+  return 'Signal received. Your ZEALWISH passport can keep growing from this moment.';
+}
 
 app.post('/api/generate-image', async (req, res) => {
   if (!IMAGE_API_KEY) {
@@ -168,6 +178,10 @@ app.post('/api/chat', async (req, res) => {
     return res.status(400).json({ error: 'messages is required' });
   }
 
+  if (!CHAT_API_KEY) {
+    return res.json({ text: fallbackChatReply(messages), source: 'server-fallback', warning: 'CHAT_API_KEY not configured' });
+  }
+
   try {
     const payload = {
       model: CHAT_MODEL,
@@ -249,6 +263,10 @@ app.post('/api/detect-gender', async (req, res) => {
   const { description } = req.body;
   if (!description) {
     return res.json({ gender: 'female' });
+  }
+
+  if (!CHAT_API_KEY) {
+    return res.json({ gender: 'female', warning: 'CHAT_API_KEY not configured' });
   }
 
   try {
