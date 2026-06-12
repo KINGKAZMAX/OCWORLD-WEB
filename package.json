@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "npm run prepare:hermes-source && vite",
-    "build:web": "node scripts/build-zealwish-web-app.mjs",
+    "build:web": "node scripts/build-zealwish-web-app.mjs && node scripts/build-zealwish-landing.mjs",
     "build": "npm run build:web && tsc --noEmit && vite build",
     "prepare:hermes-source": "node scripts/ensure-hermes-agent.mjs",
     "build:cli": "tsc -p tsconfig.cli.json",
@@ -44,6 +44,8 @@
     "@vitejs/plugin-react": "^4.4.1",
     "electron": "^35.7.5",
     "electron-builder": "^26.8.1",
+    "esbuild": "^0.28.1",
+    "ethers": "^6.16.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
