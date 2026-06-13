@@ -10,6 +10,8 @@ const VAULT_KEY = "zealwish.web.vault";
 const LEGACY_MEMORIES_KEY = "zealwish.web.memories";
 const VOICE_PREF_KEY = "zealwish.voice";
 const HANDSFREE_KEY = "zealwish.handsfree";
+const CHAT_LOG_KEY = "zealwish.web.chatlog";
+const SCENE_KEY = "zealwish.web.scene";
 
 const STARTER_PROMPTS = [
   'Tell me about yourself',
@@ -218,6 +220,28 @@ function loadIdentity() {
   return fresh;
 }
 
+function loadChatLog(identityName) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CHAT_LOG_KEY) || 'null');
+    if (Array.isArray(saved) && saved.length) {
+      const clean = saved
+        .filter((message) => message && typeof message.text === 'string' && message.text && !message.streaming)
+        .slice(-40);
+      if (clean.length) return clean;
+    }
+  } catch {}
+  return [
+    { role: 'character', text: `Hey — I'm ${identityName}. Talk to me with your voice or keyboard; I'll remember what matters.` }
+  ];
+}
+
+function persistChatLog(messages) {
+  try {
+    const clean = (messages || []).filter((message) => !message.streaming).slice(-40);
+    localStorage.setItem(CHAT_LOG_KEY, JSON.stringify(clean));
+  } catch {}
+}
+
 // --- Memory vault v2: facts + episodes + milestones + relationship ---
 
 function starterVault() {
@@ -335,6 +359,9 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 let activeVoiceAudio = null;
 let voicePlaying = false;
+// Bumped on every interrupt; in-flight TTS fetches check it before playing so a
+// muted/interrupted reply can never start talking after the fact.
+let voiceGeneration = 0;
 const voiceQueue = [];
 const voiceActivityListeners = new Set();
 
@@ -361,6 +388,7 @@ function resolveVoiceGender(identity) {
 }
 
 function stopVoicePlayback() {
+  voiceGeneration += 1;
   voiceQueue.length = 0;
   try {
     if (activeVoiceAudio) {
@@ -388,6 +416,10 @@ function playAudioBase64(result) {
       };
       audio.addEventListener('ended', () => finish(true));
       audio.addEventListener('error', () => finish(false));
+      // pause() from an interrupt never fires 'ended' — settle the promise so
+      // the queue pump can't be left hanging. audio.ended guards browsers that
+      // also fire 'pause' on natural completion.
+      audio.addEventListener('pause', () => { if (!audio.ended) finish(false); });
       audio.play().catch(() => finish(false));
     } catch {
       resolvePlayback(false);
@@ -415,6 +447,7 @@ function speakWithBrowserVoice(text) {
 async function speakTextNow(text, gender) {
   const clean = String(text || '').trim();
   if (!clean) return;
+  const generation = voiceGeneration;
   // Primary: StepFun TTS through the ZEALWISH API (serverless on web, local server in dev).
   try {
     const base = window.ZEALWISH_API?.resolveApiBase?.();
@@ -424,12 +457,15 @@ async function speakTextNow(text, gender) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: clean, gender })
       });
+      if (generation !== voiceGeneration) return; // interrupted while fetching — stay silent
       if (response.ok) {
         const data = await response.json().catch(() => null);
+        if (generation !== voiceGeneration) return;
         if (await playAudioBase64(data)) return;
       }
     }
   } catch {}
+  if (generation !== voiceGeneration) return;
   // Last resort: browser speech synthesis — robotic, but never silent.
   await speakWithBrowserVoice(clean);
 }
@@ -1035,26 +1071,42 @@ function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSe
     if (log) log.scrollTop = log.scrollHeight;
   }, [chatMessages]);
 
+  const [interimText, setInterimText] = useState('');
+
   const startListening = useCallback(() => {
     if (!SR || recognitionRef.current) return false;
     let recognition;
     try { recognition = new SR(); } catch { return false; }
     recognition.lang = 'en-US';
-    recognition.interimResults = false;
+    // Live captions while the user speaks; only final results are sent.
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognition.onresult = (event) => {
       try {
-        const transcript = Array.from(event.results || []).map((result) => result?.[0]?.transcript || '').join(' ').trim();
-        if (transcript) transcriptHandlerRef.current?.(transcript);
+        let interim = '';
+        let finalText = '';
+        for (const result of Array.from(event.results || [])) {
+          const piece = result?.[0]?.transcript || '';
+          if (result.isFinal) finalText += piece;
+          else interim += piece;
+        }
+        if (finalText.trim()) {
+          setInterimText('');
+          transcriptHandlerRef.current?.(finalText.trim());
+        } else {
+          setInterimText(interim.trim());
+        }
       } catch {}
     };
     recognition.onerror = () => {
       recognitionRef.current = null;
       setIsListening(false);
+      setInterimText('');
     };
     recognition.onend = () => {
       recognitionRef.current = null;
       setIsListening(false);
+      setInterimText('');
     };
     try {
       recognition.start();
@@ -1064,6 +1116,7 @@ function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSe
     } catch {
       recognitionRef.current = null;
       setIsListening(false);
+      setInterimText('');
       return false;
     }
   }, []);
@@ -1092,7 +1145,7 @@ function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSe
   }, [activity, handsFree, voiceEnabled, chatPhase, startListening]);
 
   const stateLabel = isListening
-    ? 'Listening... speak now'
+    ? (interimText ? `"${interimText}"` : 'Listening... speak now')
     : chatPhase === 'thinking'
       ? 'Thinking...'
       : activity === 'speaking'
@@ -1182,7 +1235,10 @@ function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSe
               className="field"
               value={chatInput}
               onChange={(event) => setChatInput(event.target.value)}
-              onKeyDown={(event) => { if (event.key === 'Enter') onSend(); }}
+              onKeyDown={(event) => {
+                // IME guard: Enter while composing (e.g. picking pinyin candidates) must not send.
+                if (event.key === 'Enter' && !(event.nativeEvent?.isComposing || event.isComposing)) onSend();
+              }}
               placeholder={`Say something to ${identity?.name || 'your companion'}...`}
             />
             <button className="button-primary edge" onClick={() => onSend()} disabled={chatPhase !== 'idle'}>
@@ -1572,15 +1628,13 @@ function App() {
   const [vault, setVault] = useState(loadVault);
   const [signedPassport, setSignedPassport] = useState(loadSignedPassport);
   const [activeScene, setActiveScene] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('zealwish.web.scene') || 'null'); } catch { return null; }
+    try { return JSON.parse(localStorage.getItem(SCENE_KEY) || 'null'); } catch { return null; }
   });
   const [claimState, setClaimState] = useState('idle');
   const [portraitState, setPortraitState] = useState('idle');
   const [memoryDraft, setMemoryDraft] = useState('');
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState(() => [
-    { role: 'character', text: `Hey — I'm ${loadIdentity().name}. Talk to me with your voice or keyboard; I'll remember what matters.` }
-  ]);
+  const [chatMessages, setChatMessages] = useState(() => loadChatLog(loadIdentity().name));
   const [chatStatus, setChatStatus] = useState('');
   const [chatPhase, setChatPhase] = useState('idle');
   const [recalledNow, setRecalledNow] = useState([]);
@@ -1603,6 +1657,8 @@ function App() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+  // The conversation survives reloads — only settled messages are persisted.
+  useEffect(() => { persistChatLog(chatMessages); }, [chatMessages]);
 
   const setActiveModule = useCallback((moduleId) => {
     window.location.hash = WEB_APP_ROUTES[moduleId] || '#/home';
@@ -1899,7 +1955,7 @@ function App() {
   const handleEnterScene = useCallback((scene) => {
     setActiveScene(scene);
     sceneRef.current = scene;
-    try { localStorage.setItem('zealwish.web.scene', JSON.stringify(scene)); } catch {}
+    try { localStorage.setItem(SCENE_KEY, JSON.stringify(scene)); } catch {}
     updateVault((draft) => {
       draft.milestones.unshift({ id: `m-${randomHex(4)}`, at: new Date().toISOString(), title: `Entered scene: ${scene.title}`, tag: 'world' });
       draft.milestones = draft.milestones.slice(0, 20);
@@ -1911,7 +1967,7 @@ function App() {
   const handleLeaveScene = useCallback(() => {
     setActiveScene(null);
     sceneRef.current = null;
-    try { localStorage.setItem('zealwish.web.scene', 'null'); } catch {}
+    try { localStorage.setItem(SCENE_KEY, 'null'); } catch {}
     setChatStatus('Scene cleared.');
   }, []);
 

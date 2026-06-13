@@ -357,6 +357,12 @@ describe("frontend-v4 ZEALWISH voice-first web product", () => {
     expect(webApp).toContain("const startListening");
     expect(webApp).toContain("Hands-free");
     expect(webApp).toContain("zealwish.handsfree");
+    // Conversation survives reloads; IME Enter never sends mid-composition; live captions.
+    expect(webApp).toContain("zealwish.web.chatlog");
+    expect(webApp).toContain("persistChatLog");
+    expect(webApp).toContain("isComposing");
+    expect(webApp).toContain("interimResults = true");
+    expect(webApp).toContain("interimText");
     // Zero-friction conversation starters and user control over memory.
     expect(webApp).toContain("STARTER_PROMPTS");
     expect(webApp).toContain("onForgetFact");

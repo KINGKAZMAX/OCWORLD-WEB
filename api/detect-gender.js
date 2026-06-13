@@ -38,6 +38,7 @@ export default async function handler(req, res) {
     }, 15000);
 
     if (!response.ok) {
+      response.body?.cancel?.().catch(() => {});
       return sendJson(res, 200, { gender: 'female', warning: 'default' });
     }
 

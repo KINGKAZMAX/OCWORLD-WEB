@@ -81,10 +81,12 @@ function sseHeaders(res) {
 }
 
 function sseWrite(res, payload) {
+  if (res.writableEnded) return;
   res.write(`data: ${JSON.stringify(payload)}\n\n`);
 }
 
 function sseFinish(res, donePayload) {
+  if (res.writableEnded) return;
   sseWrite(res, donePayload);
   res.write('data: [DONE]\n\n');
   res.end();
@@ -123,6 +125,7 @@ app.post('/api/generate-image', async (req, res) => {
 
     if (!response.ok) {
       console.error('Image API error:', response.status);
+      response.body?.cancel?.().catch(() => {});
       return res.status(502).json({ error: 'Image generation failed' });
     }
 
@@ -184,6 +187,7 @@ Requirements:
 
     if (!response.ok) {
       console.error('Vision API error:', response.status);
+      response.body?.cancel?.().catch(() => {});
       return res.status(502).json({ error: 'Photo analysis failed' });
     }
 
@@ -212,6 +216,10 @@ app.post('/api/chat', async (req, res) => {
   const { system, messages, stream } = req.body;
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages is required and must be a non-empty array' });
+  }
+
+  if (!messages.every((m) => m && typeof m.role === 'string' && typeof m.content === 'string' && m.content.length > 0)) {
+    return res.status(400).json({ error: 'each message needs a string role and content' });
   }
 
   const wantsStream = stream === true;
@@ -248,6 +256,7 @@ app.post('/api/chat', async (req, res) => {
 
       if (!response.ok) {
         console.error('Chat API error:', response.status);
+        response.body?.cancel?.().catch(() => {});
         return res.json({ text: fallbackChatReply(messages), source: 'fallback', warning: UPSTREAM_WARNING });
       }
 
@@ -263,6 +272,9 @@ app.post('/api/chat', async (req, res) => {
   // --- Streaming (SSE) path ---
   sseHeaders(res);
 
+  let clientGone = false;
+  res.on?.('close', () => { clientGone = true; });
+
   let accumulated = '';
   try {
     const response = await fetchWithTimeout(`${CHAT_BASE_URL}/v1/chat/completions`, {
@@ -276,6 +288,7 @@ app.post('/api/chat', async (req, res) => {
 
     if (!response.ok || !response.body) {
       console.error('Chat API stream error:', response.status);
+      response.body?.cancel?.().catch(() => {});
       return streamFallback(res, fallbackChatReply(messages), UPSTREAM_WARNING);
     }
 
@@ -285,6 +298,10 @@ app.post('/api/chat', async (req, res) => {
     let upstreamDone = false;
 
     while (!upstreamDone) {
+      if (clientGone) {
+        reader.cancel().catch(() => {});
+        return;
+      }
       const { value, done } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
@@ -356,6 +373,7 @@ app.post('/api/speak', async (req, res) => {
 
     if (!response.ok) {
       console.error('TTS API error:', response.status);
+      response.body?.cancel?.().catch(() => {});
       return res.status(502).json({ error: 'TTS failed' });
     }
 
@@ -394,6 +412,7 @@ app.post('/api/detect-gender', async (req, res) => {
     }, 15000);
 
     if (!response.ok) {
+      response.body?.cancel?.().catch(() => {});
       return res.json({ gender: 'female', warning: 'default' });
     }
 
