@@ -335,6 +335,18 @@
   .stream-caret { display: inline-block; width: 8px; height: 14px; margin-left: 3px; vertical-align: text-bottom; background: var(--red); animation: caretBlink 800ms steps(1) infinite; }
   @keyframes caretBlink { 50% { opacity: 0; } }
   .chat-input { display: grid; grid-template-columns: minmax(0, 1fr) 120px; gap: 10px; margin-top: 16px; }
+  .stage-rail { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .stage-pill {
+    font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    padding: 4px 10px; border: 1px solid var(--line); color: var(--faint); background: transparent;
+    transition: color 200ms var(--ease), border-color 200ms var(--ease), background 200ms var(--ease);
+  }
+  .stage-pill.is-done { color: var(--muted); border-color: rgba(255,45,45,.3); }
+  .stage-pill.is-active { color: var(--white); border-color: var(--red); background: rgba(255,45,45,.16); }
+  @media (prefers-reduced-motion: no-preference) {
+    .stage-pill.is-active { animation: stagePulse 1.3s ease-in-out infinite; }
+  }
+  @keyframes stagePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,45,45,.35); } 50% { box-shadow: 0 0 0 5px rgba(255,45,45,0); } }
   .talk-listening { color: var(--red); display: inline-flex; align-items: center; gap: 8px; }
   .talk-listening-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: zealwishVoicePulse 1.4s ease-in-out infinite; }
   @keyframes zealwishVoicePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,45,45,.4); } 50% { box-shadow: 0 0 0 8px rgba(255,45,45,0); } }
@@ -469,7 +481,7 @@
 </div>
 <script src="vendor/react.production.min.js"></script>
 <script src="vendor/react-dom.production.min.js"></script>
-<script src="src/v4/wallet-service.js?v=20260613-1604"></script>
-<script src="src/v6/zealwish-web-app.js?v=20260613-1604"></script>
+<script src="src/v4/wallet-service.js?v=20260613-1618"></script>
+<script src="src/v6/zealwish-web-app.js?v=20260613-1618"></script>
 </body>
 </html>

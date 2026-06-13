@@ -1291,6 +1291,16 @@ function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSe
         ? 'Speaking...'
         : chatStatus;
 
+  // Cursor-style staged progress: turn dead air into a legible pipeline so the
+  // user always sees what the companion is doing, never a blank wait.
+  const STAGES = ['Listen', 'Recall', 'Think', 'Speak'];
+  let activeStage = -1;
+  if (isListening) activeStage = 0;
+  else if (chatPhase === 'thinking') activeStage = recalledNow?.length ? 1 : 2;
+  else if (chatPhase === 'streaming') activeStage = 2;
+  else if (activity === 'speaking') activeStage = 3;
+  const stageActive = activeStage >= 0;
+
   return (
     <>
       <div className="talk-stage">
@@ -1388,6 +1398,18 @@ function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSe
               {chatPhase === 'idle' ? 'Send' : 'Sending'}
             </button>
           </div>
+          {stageActive ? (
+            <div className="stage-rail" aria-hidden="true">
+              {STAGES.map((stage, i) => (
+                <span
+                  key={stage}
+                  className={`stage-pill${i === activeStage ? ' is-active' : ''}${i < activeStage ? ' is-done' : ''}`}
+                >
+                  {stage}
+                </span>
+              ))}
+            </div>
+          ) : null}
           <div className="action-status mono" role="status" aria-live="polite">
             {isListening ? <span className="talk-listening"><span className="talk-listening-dot" aria-hidden="true"></span>{stateLabel}</span> : stateLabel}
           </div>

@@ -258,6 +258,11 @@ describe("frontend-v4 ZEALWISH voice-first web product", () => {
     expect(webApp).toContain("downloadDataUrl");
     expect(webApp).toContain("Save image");
     expect(web).toContain(".portrait-save");
+    // Cursor-style staged progress rail turns voice dead-air into a pipeline.
+    expect(webApp).toContain("const STAGES");
+    expect(webApp).toContain("stage-rail");
+    expect(webApp).toContain("stage-pill");
+    expect(web).toContain(".stage-pill.is-active");
   });
 
   it("presents a bento home with presence, latest memory, and passport status", () => {
