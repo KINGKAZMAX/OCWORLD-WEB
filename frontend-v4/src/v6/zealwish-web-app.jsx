@@ -9,6 +9,13 @@ const SIGNED_PASSPORT_KEY = "zealwish.web.passport.signed";
 const VAULT_KEY = "zealwish.web.vault";
 const LEGACY_MEMORIES_KEY = "zealwish.web.memories";
 const VOICE_PREF_KEY = "zealwish.voice";
+const HANDSFREE_KEY = "zealwish.handsfree";
+
+const STARTER_PROMPTS = [
+  'Tell me about yourself',
+  'Remember this: I love late-night coding',
+  'Help me plan my day'
+];
 
 const WEB_CHAT_FALLBACKS = [
   "I hear you. Let's turn that into one clear next step.",
@@ -63,6 +70,30 @@ function buildPortraitPrompt({ name, prompt, artStyle, lookSeeds, skinStyle }) {
     skinStyle ? `Wardrobe: ${skinStyle}.` : '',
     'Chest-up portrait of a single character, centered, clean composition, dark backdrop with cinematic red rim light.'
   ].filter(Boolean).join(' ');
+}
+
+function compressDataUrl(dataUrl, maxSize = 512) {
+  return new Promise((resolveImage) => {
+    try {
+      const image = new Image();
+      image.onload = () => {
+        try {
+          const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(image.width * scale));
+          canvas.height = Math.max(1, Math.round(image.height * scale));
+          canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolveImage(canvas.toDataURL('image/jpeg', 0.86));
+        } catch {
+          resolveImage(dataUrl);
+        }
+      };
+      image.onerror = () => resolveImage(dataUrl);
+      image.src = dataUrl;
+    } catch {
+      resolveImage(dataUrl);
+    }
+  });
 }
 
 function downscaleImage(file, maxSize = 768) {
@@ -982,12 +1013,13 @@ function CreateView({ identity, wallet, onSaveIdentity, onGeneratePortrait, port
 
 // --- Talk: voice-first conversation ---
 
-function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSend, chatStatus, chatPhase, apiStatus, voiceEnabled, onToggleVoice, onVoiceTranscript, recalledNow, activeScene, onLeaveScene }) {
+function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSend, chatStatus, chatPhase, apiStatus, voiceEnabled, onToggleVoice, handsFree, onToggleHandsFree, onVoiceTranscript, recalledNow, activeScene, onLeaveScene }) {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
   const transcriptHandlerRef = useRef(onVoiceTranscript);
   const logRef = useRef(null);
   const activity = useVoiceActivity();
+  const previousActivityRef = useRef('idle');
 
   useEffect(() => {
     transcriptHandlerRef.current = onVoiceTranscript;
@@ -1003,15 +1035,10 @@ function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSe
     if (log) log.scrollTop = log.scrollHeight;
   }, [chatMessages]);
 
-  const handleMicClick = useCallback(() => {
-    if (!SR) return;
-    if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch {}
-      return;
-    }
-    stopVoicePlayback();
+  const startListening = useCallback(() => {
+    if (!SR || recognitionRef.current) return false;
     let recognition;
-    try { recognition = new SR(); } catch { return; }
+    try { recognition = new SR(); } catch { return false; }
     recognition.lang = 'en-US';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -1033,11 +1060,36 @@ function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSe
       recognition.start();
       recognitionRef.current = recognition;
       setIsListening(true);
+      return true;
     } catch {
       recognitionRef.current = null;
       setIsListening(false);
+      return false;
     }
   }, []);
+
+  const handleMicClick = useCallback(() => {
+    if (!SR) return;
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch {}
+      return;
+    }
+    stopVoicePlayback();
+    startListening();
+  }, [startListening]);
+
+  // Hands-free loop: when the character finishes speaking, re-open the mic so
+  // the conversation keeps flowing without another tap.
+  useEffect(() => {
+    const wasSpeaking = previousActivityRef.current === 'speaking';
+    previousActivityRef.current = activity;
+    if (!handsFree || !voiceEnabled || !SR) return undefined;
+    if (wasSpeaking && activity === 'idle' && chatPhase === 'idle' && !recognitionRef.current && document.visibilityState === 'visible') {
+      const timer = setTimeout(() => { startListening(); }, 350);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [activity, handsFree, voiceEnabled, chatPhase, startListening]);
 
   const stateLabel = isListening
     ? 'Listening... speak now'
@@ -1075,6 +1127,18 @@ function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSe
             <IconSpeaker muted={!voiceEnabled} />
             <span>{voiceEnabled ? 'Voice on' : 'Voice off'}</span>
           </button>
+          {SR ? (
+            <button
+              type="button"
+              className="talk-voice-toggle mono"
+              onClick={onToggleHandsFree}
+              aria-pressed={handsFree}
+              title="When on, the mic re-opens automatically after each reply — a continuous voice conversation."
+            >
+              <span className={handsFree ? 'handsfree-dot is-on' : 'handsfree-dot'} aria-hidden="true" />
+              <span>{handsFree ? 'Hands-free on' : 'Hands-free off'}</span>
+            </button>
+          ) : null}
           {!SR ? <p className="mono talk-sr-note">Voice input needs Chrome or Edge — typing always works.</p> : null}
         </div>
 
@@ -1104,6 +1168,15 @@ function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSe
               </div>
             ))}
           </div>
+          {chatMessages.filter((message) => message.role === 'user').length === 0 ? (
+            <div className="starter-chips" aria-label="Conversation starters">
+              {STARTER_PROMPTS.map((starter) => (
+                <button key={starter} type="button" className="starter-chip mono" onClick={() => onSend(starter)} disabled={chatPhase !== 'idle'}>
+                  {starter}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className="chat-input">
             <input
               className="field"
@@ -1127,7 +1200,7 @@ function TalkView({ identity, vault, chatInput, setChatInput, chatMessages, onSe
 
 // --- Memory vault (read-only showcase + manual add) ---
 
-function MemoryView({ vault, memoryDraft, setMemoryDraft, onAddMemory }) {
+function MemoryView({ vault, memoryDraft, setMemoryDraft, onAddMemory, onForgetFact }) {
   const [memoryStatus, setMemoryStatus] = useState('');
   const score = relationshipScore(vault);
   const now = Date.now();
@@ -1156,6 +1229,8 @@ function MemoryView({ vault, memoryDraft, setMemoryDraft, onAddMemory }) {
                   <small className="mono">
                     {fact.source === 'chat' ? 'learned in conversation' : fact.source === 'user' ? 'added by you' : 'starter signal'} / {timeAgo(fact.at)}
                     {recalled ? <b className="recall-tag"> RECALLED JUST NOW</b> : null}
+                    {' / '}
+                    <button type="button" className="forget-link" onClick={() => onForgetFact(fact.id)} title="Forget this memory" aria-label={`Forget: ${fact.text.slice(0, 40)}`}>forget</button>
                   </small>
                 </div>
               );
@@ -1511,6 +1586,9 @@ function App() {
   const [recalledNow, setRecalledNow] = useState([]);
   const [exportText, setExportText] = useState('');
   const [voiceEnabled, setVoiceEnabled] = useState(readVoicePreference);
+  const [handsFree, setHandsFree] = useState(() => {
+    try { return localStorage.getItem(HANDSFREE_KEY) === 'on'; } catch { return false; }
+  });
 
   const vaultRef = useRef(vault);
   useEffect(() => { vaultRef.current = vault; }, [vault]);
@@ -1637,7 +1715,10 @@ function App() {
       if (!response.ok) throw new Error('Image generation failed');
       const data = await response.json().catch(() => null);
       if (!data?.dataUrl) throw new Error('No image returned');
-      const next = { ...identityRef.current, avatar: data.dataUrl, updatedAt: new Date().toISOString() };
+      // Compress before persisting: a raw 1024px PNG data URL can eat most of
+      // the localStorage quota on its own.
+      const compactAvatar = await compressDataUrl(data.dataUrl, 512);
+      const next = { ...identityRef.current, avatar: compactAvatar, updatedAt: new Date().toISOString() };
       try {
         localStorage.setItem(PASSPORT_KEY, JSON.stringify(next));
         setIdentity(next);
@@ -1674,6 +1755,25 @@ function App() {
       return next;
     });
   }, []);
+
+  const handleToggleHandsFree = useCallback(() => {
+    setHandsFree((previous) => {
+      const next = !previous;
+      try { localStorage.setItem(HANDSFREE_KEY, next ? 'on' : 'off'); } catch {}
+      // Hands-free only makes sense with spoken replies — switch voice on with it.
+      if (next) {
+        setVoiceEnabled(true);
+        persistVoicePreference(true);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleForgetFact = useCallback((factId) => {
+    updateVault((draft) => {
+      draft.facts = draft.facts.filter((fact) => fact.id !== factId);
+    });
+  }, [updateVault]);
 
   const handleSendWebChat = useCallback(async (overrideText, mode = 'text') => {
     const clean = (typeof overrideText === 'string' ? overrideText : chatInput).trim();
@@ -1885,13 +1985,13 @@ function App() {
 
   const view = useMemo(() => {
     if (activeModule === 'create') return <CreateView identity={identity} wallet={wallet} onSaveIdentity={handleSaveIdentity} onGeneratePortrait={handleGeneratePortrait} portraitState={portraitState} />;
-    if (activeModule === 'talk') return <TalkView identity={identity} vault={vault} chatInput={chatInput} setChatInput={setChatInput} chatMessages={chatMessages} onSend={handleSendWebChat} chatStatus={chatStatus} chatPhase={chatPhase} apiStatus={apiStatus} voiceEnabled={voiceEnabled} onToggleVoice={handleToggleVoice} onVoiceTranscript={handleVoiceTranscript} recalledNow={recalledNow} activeScene={activeScene} onLeaveScene={handleLeaveScene} />;
-    if (activeModule === 'memory') return <MemoryView vault={vault} memoryDraft={memoryDraft} setMemoryDraft={setMemoryDraft} onAddMemory={handleAddMemory} />;
+    if (activeModule === 'talk') return <TalkView identity={identity} vault={vault} chatInput={chatInput} setChatInput={setChatInput} chatMessages={chatMessages} onSend={handleSendWebChat} chatStatus={chatStatus} chatPhase={chatPhase} apiStatus={apiStatus} voiceEnabled={voiceEnabled} onToggleVoice={handleToggleVoice} handsFree={handsFree} onToggleHandsFree={handleToggleHandsFree} onVoiceTranscript={handleVoiceTranscript} recalledNow={recalledNow} activeScene={activeScene} onLeaveScene={handleLeaveScene} />;
+    if (activeModule === 'memory') return <MemoryView vault={vault} memoryDraft={memoryDraft} setMemoryDraft={setMemoryDraft} onAddMemory={handleAddMemory} onForgetFact={handleForgetFact} />;
     if (activeModule === 'world') return <WorldView activeScene={activeScene} signedPassport={signedPassport} portraitState={portraitState} onApplySkin={handleApplySkin} onEnterScene={handleEnterScene} onRunTask={handleRunTask} onOpenOwnership={() => setActiveModule('settings')} />;
     if (activeModule === 'rewind') return <RewindView vault={vault} />;
     if (activeModule === 'settings') return <SettingsView identity={identity} vault={vault} wallet={wallet} apiStatus={apiStatus} signedPassport={signedPassport} onConnectWallet={handleConnectWallet} onRefreshApiStatus={refreshApiStatus} onClaimPassport={handleClaimPassport} claimState={claimState} onExport={handleExportPassport} exportText={exportText} />;
     return <HomeView identity={identity} vault={vault} wallet={wallet} signedPassport={signedPassport} voiceEnabled={voiceEnabled} onToggleVoice={handleToggleVoice} setActiveModule={setActiveModule} />;
-  }, [activeModule, identity, vault, wallet, chatInput, chatMessages, chatStatus, chatPhase, apiStatus, memoryDraft, exportText, voiceEnabled, signedPassport, claimState, portraitState, recalledNow, activeScene, handleToggleVoice, handleVoiceTranscript, handleSaveIdentity, handleGeneratePortrait, handleSendWebChat, handleAddMemory, handleConnectWallet, refreshApiStatus, handleClaimPassport, handleExportPassport, handleEnterScene, handleLeaveScene, handleRunTask, handleApplySkin, setActiveModule]);
+  }, [activeModule, identity, vault, wallet, chatInput, chatMessages, chatStatus, chatPhase, apiStatus, memoryDraft, exportText, voiceEnabled, handsFree, signedPassport, claimState, portraitState, recalledNow, activeScene, handleToggleVoice, handleToggleHandsFree, handleVoiceTranscript, handleSaveIdentity, handleGeneratePortrait, handleSendWebChat, handleAddMemory, handleForgetFact, handleConnectWallet, refreshApiStatus, handleClaimPassport, handleExportPassport, handleEnterScene, handleLeaveScene, handleRunTask, handleApplySkin, setActiveModule]);
 
   return <Shell activeModule={activeModule} setActiveModule={setActiveModule} wallet={wallet} identity={identity} vault={vault} apiStatus={apiStatus} signedPassport={signedPassport} onConnectWallet={handleConnectWallet}>{view}</Shell>;
 }

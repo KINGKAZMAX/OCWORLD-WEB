@@ -348,6 +348,29 @@ describe("frontend-v4 ZEALWISH voice-first web product", () => {
     expect(web).toContain(".scene-chip");
   });
 
+  it("keeps the conversation loop frictionless: hands-free mode, starter prompts, memory control", () => {
+    const webApp = readFileSync(webAppPath, "utf8");
+    const web = readFileSync(webPath, "utf8");
+    const index = readFileSync(indexPath, "utf8");
+
+    // Hands-free voice loop: mic re-opens after the character finishes speaking.
+    expect(webApp).toContain("const startListening");
+    expect(webApp).toContain("Hands-free");
+    expect(webApp).toContain("zealwish.handsfree");
+    // Zero-friction conversation starters and user control over memory.
+    expect(webApp).toContain("STARTER_PROMPTS");
+    expect(webApp).toContain("onForgetFact");
+    expect(webApp).toContain("compressDataUrl");
+    expect(web).toContain(".starter-chip");
+    expect(web).toContain(".forget-link");
+    expect(web).toContain(".handsfree-dot");
+    // Shareable product metadata on both pages.
+    expect(web).toContain('property="og:title"');
+    expect(index).toContain('property="og:title"');
+    expect(web).toContain('name="theme-color"');
+    expect(index).toContain('name="theme-color"');
+  });
+
   it("documents the preview and architecture contract in English", () => {
     expect(existsSync(architecturePath)).toBe(true);
     const architecture = readFileSync(architecturePath, "utf8");
