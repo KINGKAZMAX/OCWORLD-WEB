@@ -48,31 +48,10 @@ const ART_STYLES = [
   { id: 'arcade', label: 'Arcade', hint: '90s box art', prompt: 'Retro 90s arcade box-art style character, dynamic heroic pose, saturated airbrushed colors, subtle grain' }
 ];
 
-const LOOK_SEED_GROUPS = [
-  { id: 'hair', label: 'Hair', seeds: ['short black crop', 'silver ponytail', 'long crimson waves'] },
-  { id: 'outfit', label: 'Outfit', seeds: ['red varsity jacket', 'white street hoodie', 'tech-ninja suit'] },
-  { id: 'extras', label: 'Accessories', seeds: ['tactical goggles', 'adventure backpack', 'neon earrings', 'small companion pet'] }
+const LOOK_SEEDS = [
+  'red varsity jacket', 'tactical goggles', 'silver ponytail', 'hooded cloak',
+  'small companion pet', 'freckles and a grin', 'neon earrings', 'battle-worn scarf'
 ];
-const LOOK_SEEDS = LOOK_SEED_GROUPS.flatMap((group) => group.seeds);
-
-const PERSONALITY_PRESETS = [
-  { id: 'friendly', label: 'Friendly & Optimistic', humor: 80, curiosity: 100, empathy: 80 },
-  { id: 'calm', label: 'Calm & Thoughtful', humor: 40, curiosity: 70, empathy: 95 },
-  { id: 'witty', label: 'Witty & Sharp', humor: 100, curiosity: 85, empathy: 55 },
-  { id: 'bold', label: 'Bold & Driven', humor: 60, curiosity: 80, empathy: 50 }
-];
-
-const TRAIT_LABELS = { humor: 'Humorous', curiosity: 'Curious', empathy: 'Empathic' };
-
-function defaultPersonality() {
-  return { preset: 'friendly', humor: 80, curiosity: 100, empathy: 80 };
-}
-
-function topTraitLabel(personality) {
-  const traits = personality || defaultPersonality();
-  const ranked = ['humor', 'curiosity', 'empathy'].sort((a, b) => (traits[b] || 0) - (traits[a] || 0));
-  return TRAIT_LABELS[ranked[0]];
-}
 
 function buildPortraitPrompt({ name, prompt, artStyle, lookSeeds, skinStyle }) {
   const style = ART_STYLES.find((entry) => entry.id === artStyle) || ART_STYLES[0];
@@ -186,14 +165,11 @@ function toApiMessages(messages) {
 function defaultIdentity() {
   return {
     id: 'ZEALWISH-0001',
-    serial: `ZW-${new Date().getFullYear()}-${String(randomInt(1000000)).padStart(6, '0')}`,
     name: 'Echo',
     prompt: 'A warm, quick-witted companion who remembers what matters to you.',
-    origin: '',
     gender: 'female',
     artStyle: 'pixel',
     lookSeeds: [],
-    personality: defaultPersonality(),
     avatar: ZEALWISH_BROWSER_AVATAR_FALLBACK,
     wallet: 'not connected',
     chainId: 'pending',
@@ -204,37 +180,11 @@ function defaultIdentity() {
 function loadIdentity() {
   try {
     const saved = JSON.parse(localStorage.getItem(PASSPORT_KEY) || 'null');
-    if (saved?.name) {
-      const merged = { ...defaultIdentity(), ...saved };
-      // Persist newly-introduced fields (serial, personality) so they stay stable.
-      if (!saved.serial || !saved.personality) {
-        try { localStorage.setItem(PASSPORT_KEY, JSON.stringify(merged)); } catch {}
-      }
-      return merged;
-    }
+    if (saved?.name) return { ...defaultIdentity(), ...saved };
   } catch {}
   const fresh = defaultIdentity();
   try { localStorage.setItem(PASSPORT_KEY, JSON.stringify(fresh)); } catch {}
   return fresh;
-}
-
-const PASSPORT_EVENTS_KEY = 'zealwish.web.passport.events';
-
-function loadPassportEvents() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(PASSPORT_EVENTS_KEY) || 'null');
-    return Array.isArray(saved) ? saved : [];
-  } catch {
-    return [];
-  }
-}
-
-function recordPassportEvent(title) {
-  const events = loadPassportEvents();
-  events.unshift({ id: `pe-${randomHex(4)}`, at: new Date().toISOString(), title });
-  const trimmed = events.slice(0, 12);
-  try { localStorage.setItem(PASSPORT_EVENTS_KEY, JSON.stringify(trimmed)); } catch {}
-  return trimmed;
 }
 
 // --- Memory vault v2: facts + episodes + milestones + relationship ---
@@ -336,12 +286,9 @@ function buildChatSystemPrompt(identity, vault, recalledFacts, scene) {
   const score = relationshipScore(vault);
   const recentEpisodes = (vault?.episodes || []).slice(0, 3)
     .map((episode) => `They said "${episode.user}" and you replied "${String(episode.reply || '').slice(0, 80)}"`);
-  const personality = identity?.personality || defaultPersonality();
   return [
     `You are ${identity?.name || 'Echo'}, a living AI companion with a persistent memory vault, owned by your human through a ZEALWISH wallet passport.`,
     `Identity: ${identity?.prompt || 'A portable character passport.'}`,
-    identity?.origin ? `Origin story: ${String(identity.origin).slice(0, 280)}` : '',
-    `Personality dials (let them genuinely shape your tone): humor ${personality.humor}/100, curiosity ${personality.curiosity}/100, empathy ${personality.empathy}/100.`,
     `Durable memories about your human (weave them in naturally, never list them):`,
     ...(recalledFacts.length ? recalledFacts.map((fact) => `- ${fact.text}`) : ['- No durable memories yet; be curious and learn one.']),
     recentEpisodes.length ? `Recent moments: ${recentEpisodes.join(' / ')}` : '',
@@ -569,11 +516,7 @@ async function buildPassportV1(identity, vault, ownerAddress) {
   const traits_hash = await sha256Hex(JSON.stringify({
     name: identity.name,
     prompt: identity.prompt,
-    origin: identity.origin || '',
     gender: identity.gender,
-    personality: identity.personality || defaultPersonality(),
-    artStyle: identity.artStyle || 'pixel',
-    lookSeeds: identity.lookSeeds || [],
     avatar: identity.avatar === ZEALWISH_BROWSER_AVATAR_FALLBACK ? 'bundled' : 'generated'
   }));
   const memory_vault_hash = await sha256Hex(JSON.stringify({
@@ -880,24 +823,9 @@ function CreateView({ identity, wallet, onSaveIdentity, onGeneratePortrait, port
   const [gender, setGender] = useState(identity?.gender || 'auto');
   const [artStyle, setArtStyle] = useState(identity?.artStyle || 'pixel');
   const [lookSeeds, setLookSeeds] = useState(() => identity?.lookSeeds || []);
-  const [personality, setPersonality] = useState(() => identity?.personality || defaultPersonality());
-  const [origin, setOrigin] = useState(identity?.origin || '');
   const [saveStatus, setSaveStatus] = useState('');
   const [photoStatus, setPhotoStatus] = useState('');
   const photoInputRef = useRef(null);
-
-  const handlePresetChange = useCallback((presetId) => {
-    const preset = PERSONALITY_PRESETS.find((entry) => entry.id === presetId);
-    if (preset) {
-      setPersonality({ preset: preset.id, humor: preset.humor, curiosity: preset.curiosity, empathy: preset.empathy });
-    } else {
-      setPersonality((previous) => ({ ...previous, preset: 'custom' }));
-    }
-  }, []);
-
-  const handleTraitChange = useCallback((trait, value) => {
-    setPersonality((previous) => ({ ...previous, preset: 'custom', [trait]: Number(value) }));
-  }, []);
 
   const toggleSeed = useCallback((seed) => {
     setLookSeeds((previous) => previous.includes(seed)
@@ -909,18 +837,19 @@ function CreateView({ identity, wallet, onSaveIdentity, onGeneratePortrait, port
     setName(SURPRISE_NAMES[randomInt(SURPRISE_NAMES.length)]);
     setPrompt(SURPRISE_ARCHETYPES[randomInt(SURPRISE_ARCHETYPES.length)]);
     setArtStyle(ART_STYLES[randomInt(ART_STYLES.length)].id);
-    setLookSeeds(LOOK_SEED_GROUPS.map((group) => group.seeds[randomInt(group.seeds.length)]));
-    const preset = PERSONALITY_PRESETS[randomInt(PERSONALITY_PRESETS.length)];
-    setPersonality({ preset: preset.id, humor: preset.humor, curiosity: preset.curiosity, empathy: preset.empathy });
+    const first = LOOK_SEEDS[randomInt(LOOK_SEEDS.length)];
+    let second = LOOK_SEEDS[randomInt(LOOK_SEEDS.length)];
+    if (second === first) second = LOOK_SEEDS[(LOOK_SEEDS.indexOf(first) + 1) % LOOK_SEEDS.length];
+    setLookSeeds([first, second]);
     setGender('auto');
     setSaveStatus('Surprise seed loaded — tweak anything, then save.');
   }, []);
 
   const handleSaveClick = useCallback(async () => {
     setSaveStatus('Saving passport...');
-    await onSaveIdentity({ name, prompt, gender, artStyle, lookSeeds, personality, origin });
+    await onSaveIdentity({ name, prompt, gender, artStyle, lookSeeds });
     setSaveStatus('Passport saved. Your companion is live — go talk.');
-  }, [name, prompt, gender, artStyle, lookSeeds, personality, origin, onSaveIdentity]);
+  }, [name, prompt, gender, artStyle, lookSeeds, onSaveIdentity]);
 
   const handlePortraitClick = useCallback(() => {
     onGeneratePortrait({ name, prompt, artStyle, lookSeeds });
@@ -992,36 +921,24 @@ function CreateView({ identity, wallet, onSaveIdentity, onGeneratePortrait, port
           </div>
 
           <label className="field-label">Look seeds — tap to build the look</label>
-          {LOOK_SEED_GROUPS.map((group) => (
-            <div className="seed-group" key={group.id}>
-              <span className="seed-group-label mono">{group.label}</span>
-              <div className="seed-chips">
-                {group.seeds.map((seed) => (
-                  <button
-                    type="button"
-                    key={seed}
-                    aria-pressed={lookSeeds.includes(seed)}
-                    className={lookSeeds.includes(seed) ? 'seed-chip mono is-active' : 'seed-chip mono'}
-                    onClick={() => toggleSeed(seed)}
-                  >
-                    {seed}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-          {customSeeds.length ? (
-            <div className="seed-group">
-              <span className="seed-group-label mono">From your photo</span>
-              <div className="seed-chips">
-                {customSeeds.map((seed) => (
-                  <button type="button" key={seed} aria-pressed="true" className="seed-chip mono is-active" onClick={() => toggleSeed(seed)} title="From your photo — tap to remove">
-                    {seed}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
+          <div className="seed-chips">
+            {LOOK_SEEDS.map((seed) => (
+              <button
+                type="button"
+                key={seed}
+                aria-pressed={lookSeeds.includes(seed)}
+                className={lookSeeds.includes(seed) ? 'seed-chip mono is-active' : 'seed-chip mono'}
+                onClick={() => toggleSeed(seed)}
+              >
+                {seed}
+              </button>
+            ))}
+            {customSeeds.map((seed) => (
+              <button type="button" key={seed} aria-pressed="true" className="seed-chip mono is-active" onClick={() => toggleSeed(seed)} title="From your photo — tap to remove">
+                {seed}
+              </button>
+            ))}
+          </div>
 
           <label className="field-label">Reference photo (optional)</label>
           <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
@@ -1032,35 +949,6 @@ function CreateView({ identity, wallet, onSaveIdentity, onGeneratePortrait, port
 
           <label className="field-label" htmlFor="create-prompt">Identity prompt</label>
           <textarea id="create-prompt" className="field" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder="Who are they? What do they care about?" />
-
-          <label className="field-label" htmlFor="create-personality">Personality</label>
-          <select id="create-personality" className="field" value={personality.preset} onChange={(event) => handlePresetChange(event.target.value)}>
-            {PERSONALITY_PRESETS.map((preset) => (
-              <option key={preset.id} value={preset.id}>{preset.label}</option>
-            ))}
-            <option value="custom">Custom mix</option>
-          </select>
-          <div className="trait-sliders">
-            {['humor', 'curiosity', 'empathy'].map((trait) => (
-              <div className="trait-slider" key={trait}>
-                <span className="mono">{trait}</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={personality[trait]}
-                  style={{ '--fill': `${personality[trait]}%` }}
-                  onChange={(event) => handleTraitChange(trait, event.target.value)}
-                  aria-label={`${trait} level`}
-                />
-                <b className="mono">{personality[trait]}%</b>
-              </div>
-            ))}
-          </div>
-
-          <label className="field-label" htmlFor="create-origin">Origin story</label>
-          <textarea id="create-origin" className="field" value={origin} onChange={(event) => setOrigin(event.target.value)} placeholder="Where do they come from? A young adventurer exploring digital worlds..." />
-
           <label className="field-label" htmlFor="create-gender">Voice</label>
           <select id="create-gender" className="field" value={gender} onChange={(event) => setGender(event.target.value)}>
             <option value="auto">Auto-detect from identity</option>
@@ -1081,10 +969,9 @@ function CreateView({ identity, wallet, onSaveIdentity, onGeneratePortrait, port
           <div className={portraitState === 'rendering' || portraitState === 'slow' ? 'portrait-frame is-rendering' : 'portrait-frame'}>
             <img src={identity?.avatar || ZEALWISH_BROWSER_AVATAR_FALLBACK} alt="ZEALWISH passport character" />
           </div>
-          <div className="code mono">#{identity?.serial || identity?.id || 'ZW-0001'}</div>
+          <div className="code mono">{identity?.id || 'ZEALWISH-0001'}</div>
           <h2>{name || identity?.name}</h2>
           <p>{prompt || identity?.prompt}</p>
-          <p className="mono">{(PERSONALITY_PRESETS.find((preset) => preset.id === personality.preset)?.label) || 'Custom mix'} / {topTraitLabel(personality)}</p>
           <p className="mono">Wallet: {wallet?.shortAddress || 'not connected'}</p>
           {portraitNote ? <p className="mono portrait-note">{portraitNote}</p> : null}
         </div>
@@ -1470,17 +1357,8 @@ function RewindView({ vault }) {
 
 // --- Passport & ownership center ---
 
-function SettingsView({ identity, vault, wallet, apiStatus, signedPassport, onConnectWallet, onRefreshApiStatus, onClaimPassport, claimState, onExport, exportText, passportEvents, onShareIdentity }) {
+function SettingsView({ identity, vault, wallet, apiStatus, signedPassport, onConnectWallet, onRefreshApiStatus, onClaimPassport, claimState, onExport, exportText }) {
   const [copyStatus, setCopyStatus] = useState('');
-
-  const handleShareClick = useCallback(async () => {
-    const outcome = await onShareIdentity();
-    setCopyStatus(outcome === 'shared'
-      ? 'Identity card shared.'
-      : outcome === 'copied'
-        ? 'Identity summary copied to clipboard.'
-        : 'Sharing is not available in this browser.');
-  }, [onShareIdentity]);
 
   const walletRows = [
     ["Status", wallet?.status || "idle"],
@@ -1547,108 +1425,59 @@ function SettingsView({ identity, vault, wallet, apiStatus, signedPassport, onCo
           <section className={`panel edge glass-panel passport-card${claimState === 'claiming' ? ' is-minting' : ''}${signedPassport?.verified ? ' is-verified' : ''}`}>
             <div className="code mono">PASSPORT / V1</div>
             <h2>Character passport</h2>
-
-            <div className="id-card">
-              <div className="id-card-head mono">DIGITAL IDENTITY PASSPORT</div>
-              <div className="id-card-body">
-                <div className="id-avatar">
-                  <img src={identity?.avatar || ZEALWISH_BROWSER_AVATAR_FALLBACK} alt={`${identity?.name || 'Character'} passport portrait`} />
-                </div>
-                <div className="id-meta">
-                  <h3>{identity?.name}</h3>
-                  <div className="id-serial mono">#{identity?.serial || identity?.id}</div>
-                  <div className="mono">Owner: {signedPassport ? shortAddress(signedPassport.owner_address) : wallet?.shortAddress || 'unclaimed'}</div>
-                  <div className="mono">Created: {new Date(vault.relationship.firstMet).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                  <div className="mono id-status">
-                    Status: {signedPassport?.verified
-                      ? <span className="verified-badge"><i aria-hidden="true" /> VERIFIED</span>
-                      : signedPassport
-                        ? 'SIGNED — verification pending'
-                        : 'UNCLAIMED'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="trait-row">
-              <div className="trait-card">
-                <b>{vault.facts.length + vault.episodes.length}</b>
-                <span>Memories</span>
-              </div>
-              <div className="trait-card">
-                <b>{topTraitLabel(identity?.personality)}</b>
-                <span>Core trait</span>
-              </div>
-              <div className="trait-card">
-                <b>{relationshipLevel(relationshipScore(vault))}</b>
-                <span>Bond</span>
-              </div>
-            </div>
-
             {signedPassport ? (
-              <div className="status-ledger">
-                {[
-                  ["Passport ID", signedPassport.passport_id],
-                  ["Traits hash", `${signedPassport.traits_hash.slice(0, 18)}...`],
-                  ["Vault hash", `${signedPassport.memory_vault_hash.slice(0, 18)}...`],
-                  ["Issued", new Date(signedPassport.issued_at).toLocaleString('en-US')]
-                ].map(([label, value]) => (
-                  <div className="status-row mono" key={label}>
-                    <span>{label}</span>
-                    <strong>{value}</strong>
-                  </div>
-                ))}
-              </div>
+              <>
+                <p className={signedPassport.verified ? 'verified-badge' : 'mono'}>
+                  {signedPassport.verified ? <><i aria-hidden="true" /> Verified · owned by {shortAddress(signedPassport.owner_address)}</> : 'Signed — verification pending'}
+                </p>
+                <div className="status-ledger">
+                  {[
+                    ["Passport ID", signedPassport.passport_id],
+                    ["Character", signedPassport.character_id],
+                    ["Traits hash", `${signedPassport.traits_hash.slice(0, 18)}...`],
+                    ["Vault hash", `${signedPassport.memory_vault_hash.slice(0, 18)}...`],
+                    ["Issued", new Date(signedPassport.issued_at).toLocaleString('en-US')]
+                  ].map(([label, value]) => (
+                    <div className="status-row mono" key={label}>
+                      <span>{label}</span>
+                      <strong>{value}</strong>
+                    </div>
+                  ))}
+                </div>
+                <div className="settings-actions">
+                  <button className="button-secondary edge" onClick={onClaimPassport} disabled={claimState === 'claiming'}>
+                    {claimState === 'claiming' ? 'Signing...' : 'Re-claim (re-sign latest state)'}
+                  </button>
+                </div>
+              </>
             ) : (
-              <p>Claiming signs a hash of the character traits and memory vault with your wallet — no chain transaction, no gas, fully local.</p>
+              <>
+                <p>Claiming signs a hash of the character traits and memory vault with your wallet — no chain transaction, no gas, fully local.</p>
+                <div className="settings-actions">
+                  <button className="button-primary edge" onClick={onClaimPassport} disabled={claimState === 'claiming'}>
+                    {claimState === 'claiming' ? 'Signing...' : wallet?.shortAddress ? 'Claim passport' : 'Connect wallet to claim'}
+                  </button>
+                </div>
+              </>
             )}
-            <div className="settings-actions">
-              <button className={signedPassport ? 'button-secondary edge' : 'button-primary edge'} onClick={onClaimPassport} disabled={claimState === 'claiming'}>
-                {claimState === 'claiming'
-                  ? 'Signing...'
-                  : signedPassport
-                    ? 'Re-claim (re-sign latest state)'
-                    : wallet?.shortAddress ? 'Claim passport' : 'Connect wallet to claim'}
-              </button>
-            </div>
             {claimState && claimState !== 'claiming' && claimState !== 'idle' ? (
               <div className="action-status mono" role="status" aria-live="polite">{claimState}</div>
             ) : null}
           </section>
         </div>
 
-        <div className="settings-stack">
-          <section className="panel edge">
-            <div className="code mono">VERIFICATION HISTORY</div>
-            <h2>Record of trust</h2>
-            {passportEvents?.length ? (
-              <div className="history-list">
-                {passportEvents.map((event) => (
-                  <div className="history-row" key={event.id}>
-                    <time className="mono">{timeAgo(event.at)}</time>
-                    <b>{event.title}</b>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mono">Claim, export, or share the passport — every act of ownership lands here.</p>
-            )}
-          </section>
-
-          <section className="panel edge settings-export">
-            <div className="code mono">EXPORT / PORTABLE RECORD</div>
-            <h2>Export ownership record</h2>
-            <p>One JSON file: identity, signed passport, memory vault, and the message + signature anyone can verify.</p>
-            <div className="settings-actions">
-              <button className="button-primary edge" onClick={handleShareClick}>Share Identity</button>
-              <button className="button-secondary edge" onClick={handleExportClick}>Export Passport</button>
-              <button className="button-secondary edge" onClick={handleCopyExport} disabled={!exportText}>Copy export JSON</button>
-              <button className="button-secondary edge" onClick={handleDownloadExport} disabled={!exportText}>Download export JSON</button>
-            </div>
-            <div className="copy-status mono">{copyStatus}</div>
-            <pre className="export-box">{exportText || 'No export generated yet.'}</pre>
-          </section>
-        </div>
+        <section className="panel edge settings-export">
+          <div className="code mono">EXPORT / PORTABLE RECORD</div>
+          <h2>Export ownership record</h2>
+          <p>One JSON file: identity, signed passport, memory vault, and the message + signature anyone can verify.</p>
+          <div className="settings-actions">
+            <button className="button-primary edge" onClick={handleExportClick}>Export Passport</button>
+            <button className="button-secondary edge" onClick={handleCopyExport} disabled={!exportText}>Copy export JSON</button>
+            <button className="button-secondary edge" onClick={handleDownloadExport} disabled={!exportText}>Download export JSON</button>
+          </div>
+          <div className="copy-status mono">{copyStatus}</div>
+          <pre className="export-box">{exportText || 'No export generated yet.'}</pre>
+        </section>
       </div>
     </section>
   );
@@ -1667,7 +1496,6 @@ function App() {
   const [identity, setIdentity] = useState(loadIdentity);
   const [vault, setVault] = useState(loadVault);
   const [signedPassport, setSignedPassport] = useState(loadSignedPassport);
-  const [passportEvents, setPassportEvents] = useState(loadPassportEvents);
   const [activeScene, setActiveScene] = useState(() => {
     try { return JSON.parse(localStorage.getItem('zealwish.web.scene') || 'null'); } catch { return null; }
   });
@@ -1749,7 +1577,7 @@ function App() {
     try { localStorage.setItem(PASSPORT_KEY, JSON.stringify(next)); } catch {}
   }, []);
 
-  const handleSaveIdentity = useCallback(async ({ name, prompt, gender, artStyle, lookSeeds, personality, origin }) => {
+  const handleSaveIdentity = useCallback(async ({ name, prompt, gender, artStyle, lookSeeds }) => {
     let resolvedGender = gender;
     if (gender === 'auto') {
       resolvedGender = 'female';
@@ -1775,10 +1603,6 @@ function App() {
       gender: resolvedGender,
       artStyle: ART_STYLES.some((entry) => entry.id === artStyle) ? artStyle : (identityRef.current.artStyle || 'pixel'),
       lookSeeds: Array.isArray(lookSeeds) ? lookSeeds.slice(0, 6) : (identityRef.current.lookSeeds || []),
-      personality: personality && typeof personality.humor === 'number'
-        ? { preset: personality.preset || 'custom', humor: personality.humor, curiosity: personality.curiosity, empathy: personality.empathy }
-        : (identityRef.current.personality || defaultPersonality()),
-      origin: typeof origin === 'string' ? origin.trim().slice(0, 400) : (identityRef.current.origin || ''),
       wallet: wallet?.address || 'not connected',
       chainId: wallet?.chainId || 'pending',
       updatedAt: new Date().toISOString()
@@ -2039,7 +1863,6 @@ function App() {
         draft.milestones.unshift({ id: `m-${randomHex(4)}`, at: new Date().toISOString(), title: verified ? 'Passport claimed and verified' : 'Passport signed', tag: 'wallet' });
         draft.milestones = draft.milestones.slice(0, 20);
       });
-      setPassportEvents(recordPassportEvent(verified ? 'Passport claimed — signature verified' : 'Passport signed — verification failed'));
       setClaimState(verified ? 'Passport verified — signature matches your wallet.' : 'Signed, but signature verification failed.');
     } catch (error) {
       setClaimState(error?.message?.includes('reject') || error?.code === 4001 ? 'Signature request was rejected.' : 'Claiming failed — try again.');
@@ -2057,42 +1880,7 @@ function App() {
     };
     const text = JSON.stringify(payload, null, 2);
     setExportText(text);
-    setPassportEvents(recordPassportEvent('Passport exported as JSON'));
     return text;
-  }, [signedPassport]);
-
-  const handleShareIdentity = useCallback(async () => {
-    const current = identityRef.current;
-    const summary = [
-      `${current.name} — ZEALWISH Character Passport #${current.serial || current.id}.`,
-      signedPassport?.verified
-        ? `Verified, owned by ${shortAddress(signedPassport.owner_address)}.`
-        : 'Local-first identity, wallet-claimable.',
-      `${vaultRef.current.facts.length} durable memories on record.`
-    ].join(' ');
-    // Native share sheets are only predictable on touch devices; desktop gets
-    // an instant clipboard copy instead of a flaky share dialog.
-    const useNativeShare = typeof navigator.share === 'function'
-      && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
-    try {
-      if (useNativeShare) {
-        await navigator.share({ title: 'ZEALWISH Character Passport', text: summary });
-        setPassportEvents(recordPassportEvent('Identity shared'));
-        return 'shared';
-      }
-      await navigator.clipboard.writeText(summary);
-      setPassportEvents(recordPassportEvent('Identity summary copied'));
-      return 'copied';
-    } catch (error) {
-      if (error?.name === 'AbortError') return 'failed';
-      try {
-        await navigator.clipboard.writeText(summary);
-        setPassportEvents(recordPassportEvent('Identity summary copied'));
-        return 'copied';
-      } catch {
-        return 'failed';
-      }
-    }
   }, [signedPassport]);
 
   const view = useMemo(() => {
@@ -2101,9 +1889,9 @@ function App() {
     if (activeModule === 'memory') return <MemoryView vault={vault} memoryDraft={memoryDraft} setMemoryDraft={setMemoryDraft} onAddMemory={handleAddMemory} />;
     if (activeModule === 'world') return <WorldView activeScene={activeScene} signedPassport={signedPassport} portraitState={portraitState} onApplySkin={handleApplySkin} onEnterScene={handleEnterScene} onRunTask={handleRunTask} onOpenOwnership={() => setActiveModule('settings')} />;
     if (activeModule === 'rewind') return <RewindView vault={vault} />;
-    if (activeModule === 'settings') return <SettingsView identity={identity} vault={vault} wallet={wallet} apiStatus={apiStatus} signedPassport={signedPassport} onConnectWallet={handleConnectWallet} onRefreshApiStatus={refreshApiStatus} onClaimPassport={handleClaimPassport} claimState={claimState} onExport={handleExportPassport} exportText={exportText} passportEvents={passportEvents} onShareIdentity={handleShareIdentity} />;
+    if (activeModule === 'settings') return <SettingsView identity={identity} vault={vault} wallet={wallet} apiStatus={apiStatus} signedPassport={signedPassport} onConnectWallet={handleConnectWallet} onRefreshApiStatus={refreshApiStatus} onClaimPassport={handleClaimPassport} claimState={claimState} onExport={handleExportPassport} exportText={exportText} />;
     return <HomeView identity={identity} vault={vault} wallet={wallet} signedPassport={signedPassport} voiceEnabled={voiceEnabled} onToggleVoice={handleToggleVoice} setActiveModule={setActiveModule} />;
-  }, [activeModule, identity, vault, wallet, chatInput, chatMessages, chatStatus, chatPhase, apiStatus, memoryDraft, exportText, voiceEnabled, signedPassport, claimState, portraitState, recalledNow, activeScene, passportEvents, handleToggleVoice, handleVoiceTranscript, handleSaveIdentity, handleGeneratePortrait, handleSendWebChat, handleAddMemory, handleConnectWallet, refreshApiStatus, handleClaimPassport, handleExportPassport, handleShareIdentity, handleEnterScene, handleLeaveScene, handleRunTask, handleApplySkin, setActiveModule]);
+  }, [activeModule, identity, vault, wallet, chatInput, chatMessages, chatStatus, chatPhase, apiStatus, memoryDraft, exportText, voiceEnabled, signedPassport, claimState, portraitState, recalledNow, activeScene, handleToggleVoice, handleVoiceTranscript, handleSaveIdentity, handleGeneratePortrait, handleSendWebChat, handleAddMemory, handleConnectWallet, refreshApiStatus, handleClaimPassport, handleExportPassport, handleEnterScene, handleLeaveScene, handleRunTask, handleApplySkin, setActiveModule]);
 
   return <Shell activeModule={activeModule} setActiveModule={setActiveModule} wallet={wallet} identity={identity} vault={vault} apiStatus={apiStatus} signedPassport={signedPassport} onConnectWallet={handleConnectWallet}>{view}</Shell>;
 }

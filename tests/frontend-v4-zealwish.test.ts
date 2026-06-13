@@ -348,32 +348,6 @@ describe("frontend-v4 ZEALWISH voice-first web product", () => {
     expect(web).toContain(".scene-chip");
   });
 
-  it("ships a mature passport product: personality engine, ID card, verification history, share", () => {
-    const webApp = readFileSync(webAppPath, "utf8");
-    const web = readFileSync(webPath, "utf8");
-
-    // Personality presets + sliders feed the chat system prompt and traits hash.
-    expect(webApp).toContain("const PERSONALITY_PRESETS");
-    expect(webApp).toContain("Friendly & Optimistic");
-    expect(webApp).toContain('type="range"');
-    expect(webApp).toContain("Personality dials");
-    expect(webApp).toContain("Origin story");
-    expect(webApp).toContain("const LOOK_SEED_GROUPS");
-    // ID-card passport surface with stable serial.
-    expect(webApp).toContain("DIGITAL IDENTITY PASSPORT");
-    expect(webApp).toMatch(/serial: `ZW-\$\{/);
-    expect(webApp).toContain("topTraitLabel");
-    // Real verification history + share.
-    expect(webApp).toContain("zealwish.web.passport.events");
-    expect(webApp).toContain("recordPassportEvent");
-    expect(webApp).toContain("navigator.share");
-    expect(webApp).toContain("Share Identity");
-    expect(web).toContain(".id-card");
-    expect(web).toContain(".trait-slider");
-    expect(web).toContain(".trait-row");
-    expect(web).toContain(".history-list");
-  });
-
   it("documents the preview and architecture contract in English", () => {
     expect(existsSync(architecturePath)).toBe(true);
     const architecture = readFileSync(architecturePath, "utf8");

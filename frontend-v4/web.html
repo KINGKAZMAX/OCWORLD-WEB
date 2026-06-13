@@ -222,24 +222,6 @@
     transition: border-color 200ms var(--ease), color 200ms var(--ease);
   }
   .photo-drop:hover { border-color: var(--red); color: var(--white); }
-  .seed-group { margin-bottom: 4px; }
-  .seed-group-label { display: block; color: var(--faint); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; margin: 10px 0 6px; }
-  .trait-sliders { display: grid; gap: 10px; margin-top: 10px; }
-  .trait-slider { display: grid; grid-template-columns: 84px minmax(0, 1fr) 44px; align-items: center; gap: 10px; }
-  .trait-slider span { color: var(--faint); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
-  .trait-slider b { text-align: right; font-size: 11px; color: var(--white); }
-  .trait-slider input[type="range"] {
-    -webkit-appearance: none; appearance: none; width: 100%; height: 4px; outline: none; border: 0;
-    background: linear-gradient(90deg, var(--red) var(--fill, 50%), rgba(255,255,255,.14) var(--fill, 50%));
-  }
-  .trait-slider input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%;
-    background: var(--red); border: 2px solid var(--black); box-shadow: 0 0 10px var(--red-glow); cursor: pointer;
-  }
-  .trait-slider input[type="range"]::-moz-range-thumb {
-    width: 14px; height: 14px; border-radius: 50%;
-    background: var(--red); border: 2px solid var(--black); box-shadow: 0 0 10px var(--red-glow); cursor: pointer;
-  }
   .create-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
   .create-actions .button-primary, .create-actions .button-secondary { flex: 1 1 150px; min-width: 150px; padding: 0 8px; font-size: 11px; letter-spacing: .06em; white-space: nowrap; }
   .create-meta { margin-top: 12px; color: var(--faint); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
@@ -331,35 +313,6 @@
   .status-row { display: grid; grid-template-columns: minmax(110px, .45fr) minmax(0, 1fr); gap: 12px; padding: 12px 14px; background: var(--elev-1); align-items: center; }
   .status-row span { color: var(--faint); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; }
   .status-row strong { color: var(--white); overflow-wrap: anywhere; font-size: 13px; }
-  .id-card {
-    position: relative; margin-top: 14px; padding: 18px;
-    border: 1px solid rgba(255,45,45,.55);
-    background: linear-gradient(160deg, rgba(255,45,45,.08), transparent 55%), rgba(0,0,0,.42);
-  }
-  .id-card::before, .id-card::after { content: ""; position: absolute; width: 24px; height: 24px; border: 2px solid var(--red); pointer-events: none; }
-  .id-card::before { top: 6px; left: 6px; border-right: 0; border-bottom: 0; }
-  .id-card::after { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
-  .id-card-head { color: var(--muted); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; text-align: center; margin-bottom: 14px; }
-  .id-card-body { display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 16px; align-items: center; }
-  .id-avatar {
-    width: 108px; height: 108px; border-radius: 50%; overflow: hidden; border: 2px solid var(--red);
-    background: radial-gradient(circle at 50% 42%, rgba(255,45,45,.85), #2c0808 76%);
-    display: flex; align-items: flex-end; justify-content: center;
-  }
-  .id-avatar img { width: 94%; }
-  .id-meta { display: grid; gap: 4px; }
-  .id-meta h3 { margin: 0; font-family: Teko, Archivo, sans-serif; font-size: 38px; line-height: .84; text-transform: uppercase; }
-  .id-meta .mono { font-size: 11px; color: var(--muted); }
-  .id-serial { color: var(--red); letter-spacing: .08em; }
-  .id-status .verified-badge { font-size: 12px; }
-  .trait-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
-  .trait-card { border-left: 2px solid var(--red); background: var(--panel-soft); padding: 10px 12px; min-width: 0; }
-  .trait-card b { display: block; font-family: Teko, Archivo, sans-serif; font-size: 26px; line-height: .9; text-transform: uppercase; overflow-wrap: anywhere; }
-  .trait-card span { color: var(--faint); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
-  .history-list { display: grid; gap: 1px; background: rgba(255,45,45,.26); border: 1px solid rgba(255,45,45,.26); }
-  .history-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; padding: 11px 12px; background: var(--elev-1); align-items: center; }
-  .history-row time { color: var(--faint); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
-  .history-row b { font-size: 12px; font-weight: 600; }
   .passport-card { position: relative; overflow: hidden; }
   .passport-card.is-verified { border-color: rgba(61,214,140,.5); }
   .passport-card.is-minting::after {
@@ -412,9 +365,6 @@
     .talk-presence-col { position: static; }
     .timeline-row { grid-template-columns: 1fr; gap: 6px; }
     .episode-row { grid-template-columns: 1fr; gap: 8px; }
-    .id-card-body { grid-template-columns: 1fr; justify-items: center; text-align: center; }
-    .id-meta { justify-items: center; }
-    .trait-row { grid-template-columns: 1fr; }
     .settings-export { order: 1; }
   }
   @media (max-width: 560px) {
@@ -437,7 +387,7 @@
 </div>
 <script src="vendor/react.production.min.js"></script>
 <script src="vendor/react-dom.production.min.js"></script>
-<script src="src/v4/wallet-service.js?v=20260613-0551"></script>
-<script src="src/v6/zealwish-web-app.js?v=20260613-0551"></script>
+<script src="src/v4/wallet-service.js?v=20260613-0441"></script>
+<script src="src/v6/zealwish-web-app.js?v=20260613-0441"></script>
 </body>
 </html>
